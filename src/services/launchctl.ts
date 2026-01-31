@@ -69,16 +69,22 @@ export function parseLaunchctlList(
 
 	// Skip header line
 	for (let i = 1; i < lines.length; i++) {
-		const line = lines[i].trim();
+		const line = lines[i];
 		if (!line) continue;
+		const trimmedLine = line.trim();
+		if (!trimmedLine) continue;
 
-		const parts = line.split("\t");
+		const parts = trimmedLine.split("\t");
 		if (parts.length >= 3) {
-			const pid = parts[0] === "-" ? undefined : parseInt(parts[0], 10);
-			const exitStatus = parts[1] === "-" ? undefined : parseInt(parts[1], 10);
-			const label = parts[2];
+			const pidPart = parts[0];
+			const statusPart = parts[1];
+			const labelPart = parts[2];
+			if (!pidPart || !statusPart || !labelPart) continue;
 
-			services.push({ pid, exitStatus, label });
+			const pid = pidPart === "-" ? undefined : Number.parseInt(pidPart, 10);
+			const exitStatus = statusPart === "-" ? undefined : Number.parseInt(statusPart, 10);
+
+			services.push({ pid, exitStatus, label: labelPart });
 		}
 	}
 
@@ -94,7 +100,7 @@ export function parseLaunchctlPrint(output: string): Record<string, string> {
 
 	for (const line of lines) {
 		const match = line.match(/^\s*([\w\s]+)\s*=\s*(.+)$/);
-		if (match) {
+		if (match?.[1] && match[2]) {
 			const key = match[1].trim().toLowerCase().replace(/\s+/g, "_");
 			info[key] = match[2].trim();
 		}
@@ -196,10 +202,12 @@ export async function listServices(): Promise<Service[]> {
 			);
 			for (const match of serviceMatches) {
 				const serviceBlock = match[1];
+				if (!serviceBlock) continue;
 				const labelMatches = serviceBlock.matchAll(/"([^"]+)"\s*=>/g);
 
 				for (const labelMatch of labelMatches) {
 					const label = labelMatch[1];
+					if (!label) continue;
 					const service = await getServiceInfo(label, domain, type);
 					if (service) {
 						services.push(service);
@@ -379,7 +387,8 @@ export async function executeServiceAction(
 		command = ["sudo", ...command];
 	}
 
-	const result = await execCommand(command[0], command.slice(1));
+	const [cmd, ...args] = command;
+	const result = await execCommand(cmd as string, args);
 
 	if (result.exitCode === 0) {
 		return {

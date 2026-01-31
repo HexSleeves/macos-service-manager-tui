@@ -140,7 +140,8 @@ export function sortServices(
 export function getNextSortField(current: SortField): SortField {
 	const fields: SortField[] = ["label", "status", "type", "domain", "pid"];
 	const currentIndex = fields.indexOf(current);
-	return fields[(currentIndex + 1) % fields.length];
+	const nextIndex = (currentIndex + 1) % fields.length;
+	return fields[nextIndex] ?? "label";
 }
 
 /**

@@ -22,7 +22,7 @@ import {
 	ServiceList,
 } from "./components";
 import { AppContext, useAppProvider, useAppState } from "./hooks/useAppState";
-import type { ServiceAction } from "./types";
+import type { AppState, ServiceAction } from "./types";
 
 // Inner app component that uses context
 function AppContent() {
@@ -164,7 +164,7 @@ function AppContent() {
 		}
 
 		// Sorting
-		if (key.name === "s" && !key.shift && state.focusedPanel !== "search") {
+		if (key.name === "s" && !key.shift) {
 			dispatch({ type: "CYCLE_SORT_FIELD" });
 			return;
 		}
@@ -207,9 +207,8 @@ function AppContent() {
 
 		// Tab to switch panels
 		if (key.name === "tab") {
-			const panels: Array<"list" | "details"> = ["list", "details"];
-			const currentIndex = panels.indexOf(state.focusedPanel as any);
-			const nextPanel = panels[(currentIndex + 1) % panels.length];
+			const nextPanel: AppState["focusedPanel"] =
+				state.focusedPanel === "list" ? "details" : "list";
 			dispatch({ type: "SET_FOCUS", payload: nextPanel });
 			return;
 		}

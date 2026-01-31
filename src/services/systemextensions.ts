@@ -59,6 +59,9 @@ export function parseSystemExtensionsList(output: string): SystemExtension[] {
 		if (extMatch) {
 			const [, enabledState, activeState, teamId, bundleId, version] = extMatch;
 
+			// Skip if bundleId is undefined
+			if (!bundleId) continue;
+
 			const status = getExtensionStatus(enabledState, activeState);
 			const state = mapExtensionState(activeState);
 

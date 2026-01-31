@@ -40,7 +40,7 @@ export function Footer() {
 			>
 				{shortcuts.map(({ key, action }) => (
 					<box key={key} flexDirection="row" gap={1}>
-						<text fg="#60a5fa" backgroundColor="#374151">
+						<text fg="#60a5fa" bg="#374151">
 							{` ${key} `}
 						</text>
 						<text fg="#9ca3af">{action}</text>
