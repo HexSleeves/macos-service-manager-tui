@@ -3,6 +3,7 @@
  * Main list view with filtering and selection
  */
 
+import { useTerminalDimensions } from "@opentui/react";
 import { useAppState } from "../hooks/useAppState";
 import type { Service } from "../types";
 import {
@@ -10,6 +11,22 @@ import {
 	getStatusColor,
 	getStatusSymbol,
 } from "./StatusIndicator";
+
+// Fixed UI element heights
+const HEADER_HEIGHT = 3;
+const SEARCH_BAR_HEIGHT = 1;
+const FOOTER_HEIGHT = 3;
+const LIST_BORDER_HEIGHT = 2; // top + bottom border
+const LIST_HEADER_HEIGHT = 1;
+const LIST_FOOTER_HEIGHT = 1; // scroll indicator row
+
+const FIXED_OVERHEAD =
+	HEADER_HEIGHT +
+	SEARCH_BAR_HEIGHT +
+	FOOTER_HEIGHT +
+	LIST_BORDER_HEIGHT +
+	LIST_HEADER_HEIGHT +
+	LIST_FOOTER_HEIGHT;
 
 interface ServiceRowProps {
 	service: Service;
@@ -88,26 +105,28 @@ function ServiceRow({ service, isSelected, index }: ServiceRowProps) {
 	);
 }
 
-const VISIBLE_ROWS = 15;
-
 export function ServiceList() {
 	const { state, filteredServices } = useAppState();
+	const { height: terminalHeight } = useTerminalDimensions();
+
+	// Calculate visible rows based on terminal height
+	const visibleRows = Math.max(1, terminalHeight - FIXED_OVERHEAD);
 
 	// Calculate visible window - keep selected item in view
 	const totalItems = filteredServices.length;
 	let startIndex = 0;
 
-	if (totalItems > VISIBLE_ROWS) {
+	if (totalItems > visibleRows) {
 		// Try to keep selected item centered
-		const halfVisible = Math.floor(VISIBLE_ROWS / 2);
+		const halfVisible = Math.floor(visibleRows / 2);
 		startIndex = Math.max(0, state.selectedIndex - halfVisible);
 		// Adjust if we're near the end
-		if (startIndex + VISIBLE_ROWS > totalItems) {
-			startIndex = Math.max(0, totalItems - VISIBLE_ROWS);
+		if (startIndex + visibleRows > totalItems) {
+			startIndex = Math.max(0, totalItems - visibleRows);
 		}
 	}
 
-	const endIndex = Math.min(totalItems, startIndex + VISIBLE_ROWS);
+	const endIndex = Math.min(totalItems, startIndex + visibleRows);
 	const visibleServices = filteredServices.slice(startIndex, endIndex);
 
 	if (filteredServices.length === 0) {
