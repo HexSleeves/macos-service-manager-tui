@@ -69,89 +69,101 @@ export function HelpPanel() {
 	return (
 		<box
 			position="absolute"
-			left={5}
-			top={4}
-			width={70}
-			height={28}
-			border
-			borderColor="#3b82f6"
-			backgroundColor="#111827"
-			flexDirection="column"
+			left={0}
+			top={0}
+			right={0}
+			bottom={0}
+			justifyContent="center"
+			alignItems="center"
 		>
-			{/* Header */}
 			<box
-				backgroundColor="#1e3a5f"
-				paddingLeft={2}
-				paddingRight={2}
-				height={1}
-				justifyContent="space-between"
-				flexDirection="row"
+				width={70}
+				height={28}
+				border
+				borderColor="#3b82f6"
+				backgroundColor="#111827"
+				flexDirection="column"
 			>
-				<text fg="#60a5fa">
-					<strong>Keyboard Shortcuts</strong>
-				</text>
-				<text fg="#6b7280">[?] to close</text>
-			</box>
+				{/* Header */}
+				<box
+					backgroundColor="#1e3a5f"
+					paddingLeft={2}
+					paddingRight={2}
+					height={1}
+					justifyContent="space-between"
+					flexDirection="row"
+				>
+					<text fg="#60a5fa">
+						<strong>Keyboard Shortcuts</strong>
+					</text>
+					<text fg="#6b7280">[?] to close</text>
+				</box>
 
-			{/* Shortcuts content */}
-			<scrollbox flexGrow={1} padding={1}>
-				{SHORTCUT_GROUPS.map((group, gi) => (
-					<box key={group.title} flexDirection="column" marginBottom={1}>
-						<text fg="#fbbf24">
-							<strong>{group.title}</strong>
-						</text>
-						{group.shortcuts.map(({ key, description }) => (
-							<box key={`${group.title}-${key}`} flexDirection="row" paddingLeft={2}>
-								<box width={12}>
-									<text fg="#60a5fa">{key}</text>
+				{/* Shortcuts content */}
+				<scrollbox flexGrow={1} padding={1}>
+					{SHORTCUT_GROUPS.map((group) => (
+						<box key={group.title} flexDirection="column" marginBottom={1}>
+							<text fg="#fbbf24">
+								<strong>{group.title}</strong>
+							</text>
+							{group.shortcuts.map(({ key, description }) => (
+								<box
+									key={`${group.title}-${key}`}
+									flexDirection="row"
+									paddingLeft={2}
+								>
+									<box width={12}>
+										<text fg="#60a5fa">{key}</text>
+									</box>
+									<text fg="#9ca3af">{description}</text>
 								</box>
-								<text fg="#9ca3af">{description}</text>
-							</box>
-						))}
-					</box>
-				))}
+							))}
+						</box>
+					))}
 
-				{/* Status legend */}
-				<box flexDirection="column" marginTop={1}>
-					<text fg="#fbbf24">
-						<strong>Status Indicators</strong>
-					</text>
-					<box flexDirection="row" paddingLeft={2} gap={3}>
-						<text>
-							<span fg="#22c55e">●</span> Running
+					{/* Status legend */}
+					<box flexDirection="column" marginTop={1}>
+						<text fg="#fbbf24">
+							<strong>Status Indicators</strong>
 						</text>
-						<text>
-							<span fg="#6b7280">○</span> Stopped
+						<box flexDirection="row" paddingLeft={2} gap={3}>
+							<text>
+								<span fg="#22c55e">●</span> Running
+							</text>
+							<text>
+								<span fg="#6b7280">○</span> Stopped
+							</text>
+							<text>
+								<span fg="#eab308">◌</span> Disabled
+							</text>
+							<text>
+								<span fg="#ef4444">✕</span> Error
+							</text>
+						</box>
+					</box>
+
+					{/* Protection legend */}
+					<box flexDirection="column" marginTop={1}>
+						<text fg="#fbbf24">
+							<strong>Protection Indicators</strong>
 						</text>
-						<text>
-							<span fg="#eab308">◌</span> Disabled
-						</text>
-						<text>
-							<span fg="#ef4444">✕</span> Error
+						<box flexDirection="row" paddingLeft={2} gap={3}>
+							<text>🔒 SIP Protected</text>
+							<text>⚙ System-owned</text>
+							<text>🛡 Immutable</text>
+						</box>
+					</box>
+
+					{/* Info */}
+					<box marginTop={2} padding={1} backgroundColor="#1f2937">
+						<text fg="#9ca3af">
+							Note: Actions on protected services are blocked by macOS
+							security. System extensions must be managed through System
+							Preferences.
 						</text>
 					</box>
-				</box>
-
-				{/* Protection legend */}
-				<box flexDirection="column" marginTop={1}>
-					<text fg="#fbbf24">
-						<strong>Protection Indicators</strong>
-					</text>
-					<box flexDirection="row" paddingLeft={2} gap={3}>
-						<text>🔒 SIP Protected</text>
-						<text>⚙ System-owned</text>
-						<text>🛡 Immutable</text>
-					</box>
-				</box>
-
-				{/* Info */}
-				<box marginTop={2} padding={1} backgroundColor="#1f2937">
-					<text fg="#9ca3af">
-						Note: Actions on protected services are blocked by macOS security.
-						System extensions must be managed through System Preferences.
-					</text>
-				</box>
-			</scrollbox>
+				</scrollbox>
+			</box>
 		</box>
 	);
 }
