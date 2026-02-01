@@ -168,79 +168,52 @@ export function getServiceStatus(
 
 /**
  * List all services using launchctl
- * Uses different domains for comprehensive listing
+ * Uses `launchctl list` which shows services in the current user's domain
  */
 export async function listServices(): Promise<Service[]> {
 	const services: Service[] = [];
-	const domains: Array<{
-		domain: ServiceDomain;
-		target: string;
-		type: "LaunchDaemon" | "LaunchAgent";
-	}> = [
-		{ domain: "system", target: "system", type: "LaunchDaemon" },
-		{
-			domain: "user",
-			target: `user/${process.getuid?.() || 501}`,
-			type: "LaunchAgent",
-		},
-		{
-			domain: "gui",
-			target: `gui/${process.getuid?.() || 501}`,
-			type: "LaunchAgent",
-		},
-	];
+	const seenLabels = new Set<string>();
 
-	for (const { domain, target, type } of domains) {
-		// Modern launchctl: launchctl print <domain>
-		const result = await execCommand("launchctl", ["print", target]);
+	// Get user services via launchctl list (works without root)
+	const listResult = await execCommand("launchctl", ["list"]);
+	if (listResult.exitCode === 0) {
+		const parsed = parseLaunchctlList(listResult.stdout);
+		for (const { pid, exitStatus, label } of parsed) {
+			if (seenLabels.has(label)) continue;
+			seenLabels.add(label);
 
-		if (result.exitCode === 0) {
-			// Parse services from print output
-			const serviceMatches = result.stdout.matchAll(
-				/services\s*=\s*\{([^}]+)\}/gs,
-			);
-			for (const match of serviceMatches) {
-				const serviceBlock = match[1];
-				if (!serviceBlock) continue;
-				const labelMatches = serviceBlock.matchAll(/"([^"]+)"\s*=>/g);
+			const plistPath = await findPlistPath(label);
+			const protection = getProtectionStatus(label, plistPath);
+			const apple = isAppleService(label, plistPath);
+			
+			// Determine type and domain based on plist path or label
+			const isDaemon = plistPath?.includes("LaunchDaemons") || 
+				label.includes("daemon") || 
+				(!plistPath?.includes("LaunchAgents"));
+			const isSystemLevel = plistPath?.startsWith("/Library/") || 
+				plistPath?.startsWith("/System/");
+			
+			const type: "LaunchDaemon" | "LaunchAgent" = isDaemon && isSystemLevel 
+				? "LaunchDaemon" 
+				: "LaunchAgent";
+			const domain: ServiceDomain = isSystemLevel ? "system" : "user";
+			const needsRoot = requiresRoot(domain, plistPath);
 
-				for (const labelMatch of labelMatches) {
-					const label = labelMatch[1];
-					if (!label) continue;
-					const service = await getServiceInfo(label, domain, type);
-					if (service) {
-						services.push(service);
-					}
-				}
-			}
-		} else {
-			// Fallback to legacy list command
-			const listResult = await execCommand("launchctl", ["list"]);
-			if (listResult.exitCode === 0) {
-				const parsed = parseLaunchctlList(listResult.stdout);
-				for (const { pid, exitStatus, label } of parsed) {
-					const plistPath = await findPlistPath(label);
-					const protection = getProtectionStatus(label, plistPath);
-					const apple = isAppleService(label, plistPath);
-					const needsRoot = requiresRoot(domain, plistPath);
-
-					services.push({
-						id: `${domain}-${label}`,
-						label,
-						displayName: label.split(".").pop() || label,
-						type,
-						domain,
-						status: getServiceStatus(pid, exitStatus),
-						pid,
-						exitStatus,
-						protection,
-						plistPath,
-						enabled: true,
-						isAppleService: apple,
-						requiresRoot: needsRoot,
-					});
-				}
-			}
+			services.push({
+				id: `${domain}-${label}`,
+				label,
+				displayName: label.split(".").pop() || label,
+				type,
+				domain,
+				status: getServiceStatus(pid, exitStatus),
+				pid,
+				exitStatus,
+				protection,
+				plistPath,
+				enabled: true,
+				isAppleService: apple,
+				requiresRoot: needsRoot,
+			});
 		}
 	}
 
