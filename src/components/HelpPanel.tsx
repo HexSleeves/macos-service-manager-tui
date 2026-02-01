@@ -100,8 +100,8 @@ export function HelpPanel() {
 						<text fg="#fbbf24">
 							<strong>{group.title}</strong>
 						</text>
-						{group.shortcuts.map(({ key, description }, si) => (
-							<box key={`${gi}-${si}`} flexDirection="row" paddingLeft={2}>
+						{group.shortcuts.map(({ key, description }) => (
+							<box key={`${group.title}-${key}`} flexDirection="row" paddingLeft={2}>
 								<box width={12}>
 									<text fg="#60a5fa">{key}</text>
 								</box>

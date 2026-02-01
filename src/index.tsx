@@ -27,7 +27,7 @@ import type { AppState, ServiceAction } from "./types";
 // Inner app component that uses context
 function AppContent() {
 	const renderer = useRenderer();
-	const { width, height } = useTerminalDimensions();
+	const _terminalDimensions = useTerminalDimensions();
 	const {
 		state,
 		dispatch,
