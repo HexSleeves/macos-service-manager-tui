@@ -189,15 +189,35 @@ export function ServiceList() {
 			</box>
 
 			{/* Service rows - virtual scrolling */}
-			<box flexDirection="column" flexGrow={1}>
-				{visibleServices.map((service, i) => (
-					<ServiceRow
-						key={service.id}
-						service={service}
-						isSelected={startIndex + i === state.selectedIndex}
-						index={startIndex + i}
-					/>
-				))}
+			{/* Render exactly visibleRows to prevent ghost rows */}
+			<box 
+				flexDirection="column" 
+				flexGrow={1}
+				overflow="hidden"
+			>
+				{Array.from({ length: visibleRows }).map((_, i) => {
+					const service = visibleServices[i];
+					if (service) {
+						return (
+							<ServiceRow
+								key={`row-${i}`}
+								service={service}
+								isSelected={startIndex + i === state.selectedIndex}
+								index={startIndex + i}
+							/>
+						);
+					}
+					// Empty row placeholder to fill space and clear old content
+					return (
+						<box
+							key={`empty-${i}`}
+							height={1}
+							backgroundColor={i % 2 === 0 ? "#1f2937" : "#111827"}
+						>
+							<text> </text>
+						</box>
+					);
+				})}
 			</box>
 
 			{/* Scroll indicator */}
