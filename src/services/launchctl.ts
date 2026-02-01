@@ -417,18 +417,104 @@ export async function executeServiceAction(
 			success: true,
 			message: `Successfully ${action}ed service: ${service.label}`,
 		};
-	} else {
-		// Check for permission errors
-		const isPermissionError =
-			result.stderr.includes("Operation not permitted") ||
-			result.stderr.includes("Permission denied") ||
-			result.exitCode === 1;
+	}
+	
+	// Parse and categorize error
+	const errorInfo = parseErrorMessage(result.stderr, result.exitCode);
+	
+	return {
+		success: false,
+		message: `Failed to ${action} service`,
+		error: errorInfo.message,
+		requiresRoot: errorInfo.requiresRoot && !service.requiresRoot,
+		sipProtected: errorInfo.sipProtected,
+	};
+}
 
+/**
+ * Parse launchctl error messages into user-friendly format
+ */
+function parseErrorMessage(
+	stderr: string,
+	exitCode: number,
+): { message: string; requiresRoot: boolean; sipProtected: boolean } {
+	const lower = stderr.toLowerCase();
+	
+	// Permission errors
+	if (lower.includes("operation not permitted") || lower.includes("permission denied")) {
 		return {
-			success: false,
-			message: `Failed to ${action} service`,
-			error: result.stderr || "Unknown error",
-			requiresRoot: isPermissionError && !service.requiresRoot,
+			message: "Permission denied - may require administrator privileges",
+			requiresRoot: true,
+			sipProtected: false,
 		};
 	}
+	
+	// SIP protection
+	if (lower.includes("system integrity protection") || lower.includes("sip")) {
+		return {
+			message: "Protected by System Integrity Protection",
+			requiresRoot: false,
+			sipProtected: true,
+		};
+	}
+	
+	// Service not found
+	if (lower.includes("could not find service") || lower.includes("no such service")) {
+		return {
+			message: "Service not found or not loaded",
+			requiresRoot: false,
+			sipProtected: false,
+		};
+	}
+	
+	// Already running/stopped
+	if (lower.includes("already running") || lower.includes("already bootstrapped")) {
+		return {
+			message: "Service is already running",
+			requiresRoot: false,
+			sipProtected: false,
+		};
+	}
+	
+	if (lower.includes("not running") || lower.includes("no such process")) {
+		return {
+			message: "Service is not running",
+			requiresRoot: false,
+			sipProtected: false,
+		};
+	}
+	
+	// Bootstrap errors
+	if (lower.includes("could not bootstrap") || lower.includes("bootstrap failed")) {
+		return {
+			message: "Failed to bootstrap service - check plist configuration",
+			requiresRoot: false,
+			sipProtected: false,
+		};
+	}
+	
+	// Timeout
+	if (lower.includes("timed out")) {
+		return {
+			message: "Operation timed out",
+			requiresRoot: false,
+			sipProtected: false,
+		};
+	}
+	
+	// Generic exit code handling
+	if (exitCode === 1) {
+		return {
+			message: stderr.trim() || "Operation failed",
+			requiresRoot: true, // Assume might need root
+			sipProtected: false,
+		};
+	}
+	
+	// Default
+	return {
+		message: stderr.trim() || `Unknown error (exit code ${exitCode})`,
+		requiresRoot: false,
+		sipProtected: false,
+	};
 }

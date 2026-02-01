@@ -10,7 +10,7 @@
 - [ ] **Implement real-time status updates** - Poll for PID/status changes periodically
 
 ### Error Handling
-- [ ] **Better error parsing** - Extract meaningful messages from launchctl stderr
+- [x] **Better error parsing** - Extract meaningful messages from launchctl stderr
 - [x] **Timeout handling** - Add timeouts for launchctl commands that hang
 - [ ] **Retry logic** - Automatic retry for transient failures
 - [ ] **Offline mode** - Graceful degradation when commands fail
