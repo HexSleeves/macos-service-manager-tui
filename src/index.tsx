@@ -40,6 +40,11 @@ function AppContent() {
 
 	// Keyboard handling
 	useKeyboard((key) => {
+		// Block input while executing an action
+		if (state.executingAction) {
+			return;
+		}
+
 		// Handle confirm dialog
 		if (state.showConfirm) {
 			if (key.name === "escape") {

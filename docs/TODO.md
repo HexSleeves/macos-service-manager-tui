@@ -11,20 +11,20 @@
 
 ### Error Handling
 - [ ] **Better error parsing** - Extract meaningful messages from launchctl stderr
-- [ ] **Timeout handling** - Add timeouts for launchctl commands that hang
+- [x] **Timeout handling** - Add timeouts for launchctl commands that hang
 - [ ] **Retry logic** - Automatic retry for transient failures
 - [ ] **Offline mode** - Graceful degradation when commands fail
 
 ### Security
 - [ ] **Audit sudo usage** - Ensure we only use sudo when absolutely necessary
-- [ ] **Validate service labels** - Prevent command injection via malicious labels
+- [x] **Validate service labels** - Prevent command injection via malicious labels
 - [ ] **Add dry-run mode** - Show what would be executed without doing it
 
 ## Medium Priority
 
 ### UI Improvements
-- [ ] **Add loading spinners** - Visual feedback during long operations
-- [ ] **Implement toast notifications** - Better action result feedback
+- [x] **Add loading spinners** - Visual feedback during long operations (executing overlay)
+- [x] **Implement toast notifications** - Better action result feedback (footer status)
 - [ ] **Add service log viewer** - Show recent logs from `log show --predicate`
 - [ ] **Responsive column widths** - Adjust list columns based on terminal width
 - [ ] **Add mouse support** - Click to select, scroll wheel
@@ -110,11 +110,11 @@
 ## Known Issues
 
 - [ ] **Search doesn't clear on filter change** - Should optionally reset
-- [ ] **Selected index can exceed list length** - After filtering
-- [ ] **System extensions show action buttons** - Should be hidden entirely
-- [ ] **No indication of pending operations** - Actions appear instant
-- [ ] **Help panel doesn't scroll** - Clips on small terminals
-- [ ] **Filter bar takes too much space** - Consider collapsible or minimal mode
+- [x] **Selected index can exceed list length** - After filtering (bounded in reducer + provider)
+- [x] **System extensions show action buttons** - Should be hidden entirely (already fixed)
+- [x] **No indication of pending operations** - Actions appear instant (executing overlay added)
+- [x] **Help panel doesn't scroll** - Clips on small terminals (adaptive sizing + compact mode)
+- [x] **Filter bar takes too much space** - Consider collapsible or minimal mode (already collapsible with 'f')
 
 ## Ideas for Future
 

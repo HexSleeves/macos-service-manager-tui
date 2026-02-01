@@ -3,6 +3,7 @@
  * Shows keyboard shortcuts and usage information
  */
 
+import { useTerminalDimensions } from "@opentui/react";
 import { useAppState } from "../hooks/useAppState";
 
 interface ShortcutGroup {
@@ -14,57 +15,60 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 	{
 		title: "Navigation",
 		shortcuts: [
-			{ key: "↑/k", description: "Move selection up" },
-			{ key: "↓/j", description: "Move selection down" },
-			{ key: "g", description: "Go to first service" },
-			{ key: "G", description: "Go to last service" },
-			{ key: "Tab", description: "Switch panel focus" },
+			{ key: "↑/k ↓/j", description: "Move selection" },
+			{ key: "g/G", description: "First/last service" },
+			{ key: "Tab", description: "Switch panel" },
+			{ key: "PgUp/Dn", description: "Page up/down" },
 		],
 	},
 	{
 		title: "Search & Filter",
 		shortcuts: [
 			{ key: "/", description: "Focus search" },
-			{ key: "ESC", description: "Clear search / Cancel" },
-			{ key: "f", description: "Toggle filter panel" },
+			{ key: "ESC", description: "Clear/cancel" },
+			{ key: "f", description: "Toggle filters" },
 			{ key: "1-4", description: "Filter by type" },
-			{ key: "a", description: "Toggle Apple services" },
-			{ key: "p", description: "Toggle protected services" },
+			{ key: "a", description: "Toggle Apple svcs" },
+			{ key: "p", description: "Toggle protected" },
 		],
 	},
 	{
 		title: "Sorting",
 		shortcuts: [
-			{ key: "s", description: "Cycle sort field" },
-			{ key: "S", description: "Toggle sort direction" },
+			{ key: "s/S", description: "Cycle field/dir" },
 		],
 	},
 	{
-		title: "Service Actions",
+		title: "Actions",
 		shortcuts: [
-			{ key: "Enter", description: "Start service (if stopped)" },
+			{ key: "Enter", description: "Start (if stopped)" },
 			{ key: "x", description: "Stop service" },
 			{ key: "r", description: "Reload service" },
-			{ key: "d", description: "Toggle enable/disable" },
+			{ key: "d", description: "Enable/disable" },
 			{ key: "u", description: "Unload service" },
 		],
 	},
 	{
 		title: "General",
 		shortcuts: [
-			{ key: "R", description: "Refresh service list" },
-			{ key: "?", description: "Toggle this help" },
-			{ key: "q/Ctrl+C", description: "Quit" },
+			{ key: "R", description: "Refresh list" },
+			{ key: "?", description: "Toggle help" },
+			{ key: "q", description: "Quit" },
 		],
 	},
 ];
 
 export function HelpPanel() {
 	const { state } = useAppState();
+	const { height: terminalHeight } = useTerminalDimensions();
 
 	if (!state.showHelp) {
 		return null;
 	}
+
+	// Calculate appropriate height based on terminal
+	const maxHeight = Math.min(terminalHeight - 4, 32);
+	const useCompactMode = terminalHeight < 30;
 
 	return (
 		<box
@@ -77,12 +81,13 @@ export function HelpPanel() {
 			alignItems="center"
 		>
 			<box
-				width={70}
-				height={28}
+				width={useCompactMode ? 50 : 65}
+				height={maxHeight}
 				border
 				borderColor="#3b82f6"
 				backgroundColor="#111827"
 				flexDirection="column"
+				overflow="hidden"
 			>
 				{/* Header */}
 				<box
@@ -96,73 +101,72 @@ export function HelpPanel() {
 					<text fg="#60a5fa">
 						<strong>Keyboard Shortcuts</strong>
 					</text>
-					<text fg="#6b7280">[?] to close</text>
+					<text fg="#6b7280">[?] close</text>
 				</box>
 
-				{/* Shortcuts content */}
-				<scrollbox flexGrow={1} padding={1}>
-					{SHORTCUT_GROUPS.map((group) => (
-						<box key={group.title} flexDirection="column" marginBottom={1}>
-							<text fg="#fbbf24">
-								<strong>{group.title}</strong>
-							</text>
-							{group.shortcuts.map(({ key, description }) => (
-								<box
-									key={`${group.title}-${key}`}
-									flexDirection="row"
-									paddingLeft={2}
-								>
-									<box width={12}>
-										<text fg="#60a5fa">{key}</text>
-									</box>
-									<text fg="#9ca3af">{description}</text>
+				{/* Shortcuts content - two column layout for compact mode */}
+				{useCompactMode ? (
+					<box flexDirection="column" padding={1} flexGrow={1}>
+						{SHORTCUT_GROUPS.map((group) => (
+							<box key={group.title} flexDirection="row" flexWrap="wrap">
+								<box width="100%">
+									<text fg="#fbbf24">
+										<strong>{group.title}:</strong>
+									</text>
 								</box>
-							))}
-						</box>
-					))}
+								{group.shortcuts.map(({ key, description }) => (
+									<box key={`${group.title}-${key}`} width="50%">
+										<text>
+											<span fg="#60a5fa">{key}</span>
+											<span fg="#6b7280"> {description}</span>
+										</text>
+									</box>
+								))}
+							</box>
+						))}
+					</box>
+				) : (
+					<box flexDirection="column" padding={1} flexGrow={1}>
+						{SHORTCUT_GROUPS.map((group) => (
+							<box key={group.title} flexDirection="column" marginBottom={1}>
+								<text fg="#fbbf24">
+									<strong>{group.title}</strong>
+								</text>
+								{group.shortcuts.map(({ key, description }) => (
+									<box
+										key={`${group.title}-${key}`}
+										flexDirection="row"
+										paddingLeft={2}
+									>
+										<box width={12}>
+											<text fg="#60a5fa">{key}</text>
+										</box>
+										<text fg="#9ca3af">{description}</text>
+									</box>
+								))}
+							</box>
+						))}
 
-					{/* Status legend */}
-					<box flexDirection="column" marginTop={1}>
-						<text fg="#fbbf24">
-							<strong>Status Indicators</strong>
-						</text>
-						<box flexDirection="row" paddingLeft={2} gap={3}>
+						{/* Status legend - inline */}
+						<box flexDirection="row" paddingLeft={2} gap={2} marginTop={1}>
 							<text>
-								<span fg="#22c55e">●</span> Running
+								<span fg="#22c55e">●</span> Run
 							</text>
 							<text>
-								<span fg="#6b7280">○</span> Stopped
+								<span fg="#6b7280">○</span> Stop
 							</text>
 							<text>
-								<span fg="#eab308">◌</span> Disabled
+								<span fg="#eab308">◌</span> Off
 							</text>
 							<text>
-								<span fg="#ef4444">✕</span> Error
+								<span fg="#ef4444">✕</span> Err
 							</text>
+							<text>🔒 SIP</text>
+							<text>⚙ Sys</text>
+							<text>🛡 Imm</text>
 						</box>
 					</box>
-
-					{/* Protection legend */}
-					<box flexDirection="column" marginTop={1}>
-						<text fg="#fbbf24">
-							<strong>Protection Indicators</strong>
-						</text>
-						<box flexDirection="row" paddingLeft={2} gap={3}>
-							<text>🔒 SIP Protected</text>
-							<text>⚙ System-owned</text>
-							<text>🛡 Immutable</text>
-						</box>
-					</box>
-
-					{/* Info */}
-					<box marginTop={2} padding={1} backgroundColor="#1f2937">
-						<text fg="#9ca3af">
-							Note: Actions on protected services are blocked by macOS
-							security. System extensions must be managed through System
-							Preferences.
-						</text>
-					</box>
-				</scrollbox>
+				)}
 			</box>
 		</box>
 	);

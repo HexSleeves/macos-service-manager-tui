@@ -105,6 +105,7 @@ export interface AppState {
 	showConfirm: boolean;
 	pendingAction: ServiceAction | null;
 	lastActionResult: ActionResult | null;
+	executingAction: boolean; // True while an action is being executed
 }
 
 // App actions
@@ -126,7 +127,8 @@ export type AppAction =
 	| { type: "CONFIRM_ACTION" }
 	| { type: "CANCEL_ACTION" }
 	| { type: "SET_ACTION_RESULT"; payload: ActionResult | null }
-	| { type: "REFRESH" };
+	| { type: "REFRESH" }
+	| { type: "SET_EXECUTING"; payload: boolean };
 
 // Context type
 export interface AppContextType {

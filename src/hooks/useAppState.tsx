@@ -50,6 +50,7 @@ const initialState: AppState = {
 	showConfirm: false,
 	pendingAction: null,
 	lastActionResult: null,
+	executingAction: false,
 };
 
 // Reducer
@@ -73,9 +74,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
 			return { ...state, error: action.payload, loading: false };
 
 		case "SELECT_INDEX":
-			return { ...state, selectedIndex: action.payload };
+			// Bounds checking is done when using filteredServices in the provider
+			return { ...state, selectedIndex: Math.max(0, action.payload) };
 
 		case "SELECT_NEXT":
+			// Upper bound checked when using filteredServices
 			return { ...state, selectedIndex: state.selectedIndex + 1 };
 
 		case "SELECT_PREV":
@@ -136,6 +139,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 		case "REFRESH":
 			return { ...state, loading: true, error: null };
+
+		case "SET_EXECUTING":
+			return { ...state, executingAction: action.payload };
 
 		default:
 			return state;
@@ -198,15 +204,20 @@ export function useAppProvider() {
 	// Execute action on service
 	const executeAction = useCallback(
 		async (action: ServiceAction, service: Service): Promise<ActionResult> => {
-			const result = await performServiceAction(action, service);
-			dispatch({ type: "SET_ACTION_RESULT", payload: result });
+			dispatch({ type: "SET_EXECUTING", payload: true });
+			try {
+				const result = await performServiceAction(action, service);
+				dispatch({ type: "SET_ACTION_RESULT", payload: result });
 
-			// Refresh services after action
-			if (result.success) {
-				await refresh();
+				// Refresh services after action
+				if (result.success) {
+					await refresh();
+				}
+
+				return result;
+			} finally {
+				dispatch({ type: "SET_EXECUTING", payload: false });
 			}
-
-			return result;
 		},
 		[refresh],
 	);

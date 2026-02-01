@@ -13,6 +13,27 @@ import type {
 	ServiceStatus,
 } from "../types";
 
+/**
+ * Validate a service label to prevent command injection
+ * Labels should only contain alphanumeric, dots, hyphens, and underscores
+ */
+export function isValidServiceLabel(label: string): boolean {
+	if (!label || label.length === 0 || label.length > 256) return false;
+	// Only allow safe characters in service labels
+	const safePattern = /^[a-zA-Z0-9._-]+$/;
+	return safePattern.test(label);
+}
+
+/**
+ * Sanitize a service label (validate and return or throw)
+ */
+function validateLabel(label: string): string {
+	if (!isValidServiceLabel(label)) {
+		throw new Error(`Invalid service label: ${label}`);
+	}
+	return label;
+}
+
 // Standard plist directories
 export const PLIST_DIRECTORIES = {
 	systemDaemons: "/Library/LaunchDaemons",
@@ -22,12 +43,16 @@ export const PLIST_DIRECTORIES = {
 	appleAgents: "/System/Library/LaunchAgents",
 } as const;
 
+/** Default command timeout in milliseconds */
+const DEFAULT_TIMEOUT_MS = 30000;
+
 /**
- * Execute a shell command and return stdout/stderr
+ * Execute a shell command and return stdout/stderr with timeout
  */
 async function execCommand(
 	command: string,
 	args: string[],
+	timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
 	try {
 		const proc = spawn([command, ...args], {
@@ -35,9 +60,23 @@ async function execCommand(
 			stderr: "pipe",
 		});
 
-		const stdout = await new Response(proc.stdout).text();
-		const stderr = await new Response(proc.stderr).text();
-		const exitCode = await proc.exited;
+		// Create a timeout promise
+		const timeoutPromise = new Promise<never>((_, reject) => {
+			setTimeout(() => {
+				proc.kill();
+				reject(new Error(`Command timed out after ${timeoutMs}ms`));
+			}, timeoutMs);
+		});
+
+		// Race between command completion and timeout
+		const [stdout, stderr, exitCode] = await Promise.race([
+			Promise.all([
+				new Response(proc.stdout).text(),
+				new Response(proc.stderr).text(),
+				proc.exited,
+			]),
+			timeoutPromise,
+		]);
 
 		return { stdout, stderr, exitCode };
 	} catch (error) {
@@ -300,6 +339,17 @@ export async function executeServiceAction(
 	action: ServiceAction,
 	service: Service,
 ): Promise<ActionResult> {
+	// Validate service label to prevent command injection
+	try {
+		validateLabel(service.label);
+	} catch (error) {
+		return {
+			success: false,
+			message: `Cannot ${action} service`,
+			error: error instanceof Error ? error.message : "Invalid service label",
+		};
+	}
+
 	// Check protection
 	if (
 		service.protection === "sip-protected" ||

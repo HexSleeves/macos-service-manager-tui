@@ -8,6 +8,44 @@ import { useAppState } from "../hooks/useAppState";
 export function ConfirmDialog() {
 	const { state, selectedService } = useAppState();
 
+	// Show executing overlay
+	if (state.executingAction && state.pendingAction && selectedService) {
+		return (
+			<box
+				position="absolute"
+				left={0}
+				top={0}
+				right={0}
+				bottom={0}
+				justifyContent="center"
+				alignItems="center"
+			>
+				<box
+					width={50}
+					border
+					borderColor="#60a5fa"
+					backgroundColor="#1f2937"
+					padding={2}
+					flexDirection="column"
+					alignItems="center"
+					gap={1}
+				>
+					<text fg="#60a5fa">
+						<strong>⏳ Executing...</strong>
+					</text>
+					<box marginTop={1}>
+						<text fg="#9ca3af">
+							{state.pendingAction} → {selectedService.label}
+						</text>
+					</box>
+					<box marginTop={1}>
+						<text fg="#6b7280">Please wait...</text>
+					</box>
+				</box>
+			</box>
+		);
+	}
+
 	if (!state.showConfirm || !state.pendingAction || !selectedService) {
 		return null;
 	}
