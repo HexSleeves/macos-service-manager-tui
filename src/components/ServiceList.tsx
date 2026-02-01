@@ -91,15 +91,6 @@ function ServiceRow({ service, isSelected, index }: ServiceRowProps) {
 export function ServiceList() {
 	const { state, filteredServices } = useAppState();
 
-	// Calculate visible range for scrolling
-	const listHeight = 15; // Visible rows
-	const startIndex = Math.max(
-		0,
-		state.selectedIndex - Math.floor(listHeight / 2),
-	);
-	const endIndex = Math.min(filteredServices.length, startIndex + listHeight);
-	const visibleServices = filteredServices.slice(startIndex, endIndex);
-
 	if (filteredServices.length === 0) {
 		return (
 			<box
@@ -159,17 +150,17 @@ export function ServiceList() {
 				</box>
 			</box>
 
-			{/* Service rows */}
-			<scrollbox focused={state.focusedPanel === "list"} flexGrow={1}>
-				{visibleServices.map((service, i) => (
+			{/* Service rows - render all, let box handle overflow */}
+			<box flexDirection="column" flexGrow={1} overflow="hidden">
+				{filteredServices.map((service, i) => (
 					<ServiceRow
 						key={service.id}
 						service={service}
-						isSelected={startIndex + i === state.selectedIndex}
-						index={startIndex + i}
+						isSelected={i === state.selectedIndex}
+						index={i}
 					/>
 				))}
-			</scrollbox>
+			</box>
 
 			{/* Scroll indicator */}
 			<box
@@ -184,8 +175,8 @@ export function ServiceList() {
 					{state.selectedIndex + 1} / {filteredServices.length}
 				</text>
 				<text fg="#6b7280">
-					{startIndex > 0 && "▲ "}
-					{endIndex < filteredServices.length && "▼"}
+					{state.selectedIndex > 0 && "▲ "}
+					{state.selectedIndex < filteredServices.length - 1 && "▼"}
 				</text>
 			</box>
 		</box>
