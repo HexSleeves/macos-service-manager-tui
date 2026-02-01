@@ -96,7 +96,7 @@
 - [ ] **Add logging** - Debug logging with configurable verbosity
 
 ### Performance
-- [ ] **Virtualize service list** - Only render visible rows for large lists
+- [x] **Virtualize service list** - Only render visible rows for large lists
 - [ ] **Memoize filtered/sorted results** - Prevent unnecessary recalculations
 - [ ] **Debounce search input** - Don't filter on every keystroke
 - [ ] **Lazy load service details** - Fetch full info only when selected
@@ -135,11 +135,16 @@
 - [x] Type/domain/status filters
 - [x] Sort options
 - [x] Action buttons (start/stop/reload/enable/disable/unload)
-- [x] Confirmation dialogs
-- [x] Help panel
+- [x] Confirmation dialogs (centered)
+- [x] Help panel (centered)
 - [x] Status indicators
 - [x] Protection detection (SIP, system-owned, immutable)
 - [x] Mock data for non-macOS development
 - [x] React Context state management
-- [x] launchctl command execution
+- [x] launchctl command execution (using `launchctl list`)
 - [x] systemextensionsctl parsing
+- [x] Dynamic list height based on terminal size
+- [x] Virtual scrolling for service list
+- [x] Hide Apple/macOS services by default (toggle with 'a')
+- [x] Biome linting and formatting
+- [x] TypeScript strict type checking
