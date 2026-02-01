@@ -53,9 +53,7 @@ async function execCommand(
  * Parse the output of `launchctl list` command
  * Format: PID\tStatus\tLabel
  */
-export function parseLaunchctlList(
-	output: string,
-): Array<{
+export function parseLaunchctlList(output: string): Array<{
 	pid: number | undefined;
 	exitStatus: number | undefined;
 	label: string;
@@ -82,7 +80,8 @@ export function parseLaunchctlList(
 			if (!pidPart || !statusPart || !labelPart) continue;
 
 			const pid = pidPart === "-" ? undefined : Number.parseInt(pidPart, 10);
-			const exitStatus = statusPart === "-" ? undefined : Number.parseInt(statusPart, 10);
+			const exitStatus =
+				statusPart === "-" ? undefined : Number.parseInt(statusPart, 10);
 
 			services.push({ pid, exitStatus, label: labelPart });
 		}

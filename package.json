@@ -4,7 +4,14 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "bun run --watch src/index.tsx"
+		"dev": "bun run --watch src/index.tsx",
+		"format": "bunx biome format --write",
+		"format:files": "bunx biome format --write",
+		"lint": "bunx biome lint --write",
+		"lint:files": "bunx biome lint --write",
+		"check": "bunx biome check --write",
+		"check:files": "bunx biome check --write",
+		"typecheck": "bunx tsc --noEmit"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.13",
