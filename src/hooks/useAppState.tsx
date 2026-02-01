@@ -48,6 +48,7 @@ const initialState: AppState = {
 	focusedPanel: "list",
 	showHelp: false,
 	showConfirm: false,
+	showFilters: false,
 	pendingAction: null,
 	lastActionResult: null,
 	executingAction: false,
@@ -142,6 +143,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
 		case "SET_EXECUTING":
 			return { ...state, executingAction: action.payload };
+
+		case "TOGGLE_FILTERS":
+			return { ...state, showFilters: !state.showFilters };
 
 		default:
 			return state;

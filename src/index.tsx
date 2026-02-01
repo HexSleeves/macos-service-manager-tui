@@ -10,7 +10,7 @@ import {
 	useRenderer,
 	useTerminalDimensions,
 } from "@opentui/react";
-import { useState } from "react";
+
 import {
 	ConfirmDialog,
 	FilterBar,
@@ -36,7 +36,7 @@ function AppContent() {
 		executeAction,
 		refresh,
 	} = useAppState();
-	const [showFilters, setShowFilters] = useState(false);
+
 
 	// Keyboard handling
 	useKeyboard((key) => {
@@ -118,7 +118,7 @@ function AppContent() {
 
 		// Toggle filters
 		if (key.name === "f") {
-			setShowFilters((f) => !f);
+			dispatch({ type: "TOGGLE_FILTERS" });
 			return;
 		}
 
@@ -283,7 +283,7 @@ function AppContent() {
 			<SearchBar />
 
 			{/* Filter Bar (collapsible) */}
-			{showFilters && <FilterBar />}
+			{state.showFilters && <FilterBar />}
 
 			{/* Main content area */}
 			<box flexDirection="row" flexGrow={1}>

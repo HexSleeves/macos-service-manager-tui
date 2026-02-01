@@ -15,12 +15,13 @@ import {
 // Fixed UI element heights
 const HEADER_HEIGHT = 3;
 const SEARCH_BAR_HEIGHT = 1;
+const FILTER_BAR_HEIGHT = 7; // 5 rows + padding
 const FOOTER_HEIGHT = 3;
 const LIST_BORDER_HEIGHT = 2; // top + bottom border
 const LIST_HEADER_HEIGHT = 1;
 const LIST_FOOTER_HEIGHT = 1; // scroll indicator row
 
-const FIXED_OVERHEAD =
+const BASE_OVERHEAD =
 	HEADER_HEIGHT +
 	SEARCH_BAR_HEIGHT +
 	FOOTER_HEIGHT +
@@ -110,7 +111,9 @@ export function ServiceList() {
 	const { height: terminalHeight } = useTerminalDimensions();
 
 	// Calculate visible rows based on terminal height
-	const visibleRows = Math.max(1, terminalHeight - FIXED_OVERHEAD);
+	// Account for filter bar when visible
+	const overhead = BASE_OVERHEAD + (state.showFilters ? FILTER_BAR_HEIGHT : 0);
+	const visibleRows = Math.max(1, terminalHeight - overhead);
 
 	// Calculate visible window - keep selected item in view
 	const totalItems = filteredServices.length;

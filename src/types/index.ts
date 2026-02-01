@@ -103,6 +103,7 @@ export interface AppState {
 	focusedPanel: "list" | "details" | "search" | "help";
 	showHelp: boolean;
 	showConfirm: boolean;
+	showFilters: boolean; // Whether the filter bar is visible
 	pendingAction: ServiceAction | null;
 	lastActionResult: ActionResult | null;
 	executingAction: boolean; // True while an action is being executed
@@ -128,7 +129,8 @@ export type AppAction =
 	| { type: "CANCEL_ACTION" }
 	| { type: "SET_ACTION_RESULT"; payload: ActionResult | null }
 	| { type: "REFRESH" }
-	| { type: "SET_EXECUTING"; payload: boolean };
+	| { type: "SET_EXECUTING"; payload: boolean }
+	| { type: "TOGGLE_FILTERS" };
 
 // Context type
 export interface AppContextType {
