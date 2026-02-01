@@ -88,8 +88,27 @@ function ServiceRow({ service, isSelected, index }: ServiceRowProps) {
 	);
 }
 
+const VISIBLE_ROWS = 15;
+
 export function ServiceList() {
 	const { state, filteredServices } = useAppState();
+
+	// Calculate visible window - keep selected item in view
+	const totalItems = filteredServices.length;
+	let startIndex = 0;
+
+	if (totalItems > VISIBLE_ROWS) {
+		// Try to keep selected item centered
+		const halfVisible = Math.floor(VISIBLE_ROWS / 2);
+		startIndex = Math.max(0, state.selectedIndex - halfVisible);
+		// Adjust if we're near the end
+		if (startIndex + VISIBLE_ROWS > totalItems) {
+			startIndex = Math.max(0, totalItems - VISIBLE_ROWS);
+		}
+	}
+
+	const endIndex = Math.min(totalItems, startIndex + VISIBLE_ROWS);
+	const visibleServices = filteredServices.slice(startIndex, endIndex);
 
 	if (filteredServices.length === 0) {
 		return (
@@ -150,14 +169,14 @@ export function ServiceList() {
 				</box>
 			</box>
 
-			{/* Service rows - render all, let box handle overflow */}
-			<box flexDirection="column" flexGrow={1} overflow="hidden">
-				{filteredServices.map((service, i) => (
+			{/* Service rows - virtual scrolling */}
+			<box flexDirection="column" flexGrow={1}>
+				{visibleServices.map((service, i) => (
 					<ServiceRow
 						key={service.id}
 						service={service}
-						isSelected={i === state.selectedIndex}
-						index={i}
+						isSelected={startIndex + i === state.selectedIndex}
+						index={startIndex + i}
 					/>
 				))}
 			</box>
@@ -175,8 +194,8 @@ export function ServiceList() {
 					{state.selectedIndex + 1} / {filteredServices.length}
 				</text>
 				<text fg="#6b7280">
-					{state.selectedIndex > 0 && "▲ "}
-					{state.selectedIndex < filteredServices.length - 1 && "▼"}
+					{startIndex > 0 && "▲ "}
+					{endIndex < totalItems && "▼"}
 				</text>
 			</box>
 		</box>
