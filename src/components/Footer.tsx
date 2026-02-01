@@ -12,8 +12,7 @@ export function Footer() {
 		{ key: "↑↓/jk", action: "Navigate" },
 		{ key: "/", action: "Search" },
 		{ key: "f", action: "Filter" },
-		{ key: "s", action: "Sort" },
-		{ key: "Enter", action: "Actions" },
+		{ key: "a", action: "Toggle Apple" },
 		{ key: "?", action: "Help" },
 		{ key: "q", action: "Quit" },
 	];

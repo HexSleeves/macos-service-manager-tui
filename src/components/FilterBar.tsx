@@ -90,11 +90,11 @@ export function FilterBar() {
 					Show:
 				</text>
 				<box flexDirection="row" gap={2}>
-					<text fg={filter.showAppleServices ? "#22c55e" : "#6b7280"}>
-						[✓] Apple Services
+					<text fg={filter.showAppleServices ? "#22c55e" : "#ef4444"}>
+						[{filter.showAppleServices ? "✓" : "x"}] Apple/macOS Services (a)
 					</text>
-					<text fg={filter.showProtected ? "#22c55e" : "#6b7280"}>
-						[✓] Protected
+					<text fg={filter.showProtected ? "#22c55e" : "#ef4444"}>
+						[{filter.showProtected ? "✓" : "x"}] Protected (p)
 					</text>
 				</box>
 			</box>

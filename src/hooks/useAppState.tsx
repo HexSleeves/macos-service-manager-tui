@@ -38,7 +38,7 @@ const initialState: AppState = {
 		type: "all",
 		domain: "all",
 		status: "all",
-		showAppleServices: true,
+		showAppleServices: false,
 		showProtected: true,
 	},
 	sort: {
