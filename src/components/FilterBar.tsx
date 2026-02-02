@@ -103,6 +103,8 @@ export function FilterBar() {
 				<FilterButton label="All" active={filter.domain === "all"} />
 				<FilterButton label="System" active={filter.domain === "system"} />
 				<FilterButton label="User" active={filter.domain === "user"} />
+				<FilterButton label="GUI" active={filter.domain === "gui"} />
+				<text fg="#6b7280"> - Press [[] to cycle</text>
 			</FilterRow>
 
 			{/* Status filter */}
@@ -110,7 +112,9 @@ export function FilterBar() {
 				<FilterButton label="All" active={filter.status === "all"} />
 				<FilterButton label="Running" active={filter.status === "running"} />
 				<FilterButton label="Stopped" active={filter.status === "stopped"} />
+				<FilterButton label="Disabled" active={filter.status === "disabled"} />
 				<FilterButton label="Error" active={filter.status === "error"} />
+				<text fg="#6b7280"> - Press []] to cycle</text>
 			</FilterRow>
 
 			{/* Toggles */}

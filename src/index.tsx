@@ -222,6 +222,35 @@ function AppContent() {
 			return;
 		}
 
+		// Domain filter cycling ([ key)
+		if (key.name === "[") {
+			const domains: Array<"all" | "system" | "user" | "gui"> = [
+				"all",
+				"system",
+				"user",
+				"gui",
+			];
+			const currentIndex = domains.indexOf(state.filter.domain);
+			const nextDomain = domains[(currentIndex + 1) % domains.length];
+			if (nextDomain) {
+				dispatch({ type: "SET_FILTER", payload: { domain: nextDomain } });
+			}
+			return;
+		}
+
+		// Status filter cycling (] key)
+		if (key.name === "]") {
+			const statuses: Array<
+				"all" | "running" | "stopped" | "disabled" | "error" | "unknown"
+			> = ["all", "running", "stopped", "disabled", "error"];
+			const currentIndex = statuses.indexOf(state.filter.status);
+			const nextStatus = statuses[(currentIndex + 1) % statuses.length];
+			if (nextStatus) {
+				dispatch({ type: "SET_FILTER", payload: { status: nextStatus } });
+			}
+			return;
+		}
+
 		// Tab to switch panels
 		if (key.name === "tab") {
 			const nextPanel: AppState["focusedPanel"] =
