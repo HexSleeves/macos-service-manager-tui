@@ -235,7 +235,7 @@ export function ServiceDetails() {
 						{!isRunning && (
 							<ActionButton
 								label="Start"
-								shortcut="s"
+								shortcut="↵"
 								disabled={isProtected}
 								offline={isOffline}
 							/>
