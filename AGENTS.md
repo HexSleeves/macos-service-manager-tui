@@ -4,9 +4,16 @@
 
 ```bash
 src/
-├── index.tsx                 # Main entry point
+├── index.tsx                 # Main entry point, app shell
 ├── types/index.ts            # TypeScript type definitions
-├── hooks/useAppState.tsx     # React Context + useReducer state
+├── constants/index.ts        # UI constants (colors, dimensions)
+├── store/                    # Zustand state management
+│   ├── useAppStore.ts        # Main store with state + actions
+│   ├── useAppEffects.ts      # Side effects (auto-refresh, reconnect)
+│   └── useDerivedState.ts    # Computed selectors
+├── hooks/
+│   ├── useKeyboardShortcuts.tsx  # Keyboard event handling
+│   └── useAppState/          # Legacy Context (kept for reference)
 ├── components/               # UI components (OpenTUI/React)
 │   ├── ServiceList.tsx       # Main list with virtual scrolling
 │   ├── ServiceDetails.tsx    # Selected service info panel
@@ -70,7 +77,8 @@ Examples from history:
 ## Architecture Notes
 
 - **Virtual Scrolling**: ServiceList uses position-based keys (`key={row-${i}}`), not service IDs. This is intentional for TUI rendering.
-- **State Management**: Single `useAppState` hook provides context. Actions dispatched via reducer.
+- **State Management**: Zustand store (`src/store/useAppStore.ts`) with actions and selectors. Effects handled separately in `useAppEffects.ts`.
+- **Keyboard Handling**: Centralized in `src/hooks/useKeyboardShortcuts.tsx`.
 - **macOS Detection**: Falls back to mock data on non-macOS systems.
 - **OpenTUI**: Uses `<box>`, `<text>`, `<span>` components. No `<scrollbox>` (rendering issues).
 

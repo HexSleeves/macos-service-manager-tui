@@ -1,11 +1,13 @@
 # TODO - macOS Service Manager TUI
 
-## Current State (as of 2024-02-02)
+## Current State (as of 2025-02-02)
 
 The application is functional with the following features implemented:
 - Service listing from launchctl and systemextensionsctl
 - Fuzzy search with match highlighting
 - Filtering by type, domain, status, Apple services, protected services
+- Domain filter cycling with `[` key (All/System/User/GUI)
+- Status filter cycling with `]` key (All/Running/Stopped/Disabled/Error)
 - Sorting by label, status, type, domain, PID
 - Service actions: start, stop, reload, enable, disable, unload
 - Dry-run mode (Shift+D) to preview commands
@@ -15,11 +17,22 @@ The application is functional with the following features implemented:
 - Responsive column widths based on terminal size
 - Virtual scrolling for large service lists
 
+### Recent Changes
+- **Migrated to Zustand** for state management (from Context + useReducer)
+  - `src/store/useAppStore.ts` - Main store with state and actions
+  - `src/store/useAppEffects.ts` - Side effects (auto-refresh, reconnect, metadata)
+  - `src/store/useDerivedState.ts` - Computed selectors
+- Extracted keyboard handling to `src/hooks/useKeyboardShortcuts.tsx`
+- Added domain and status filter keyboard shortcuts (`[` and `]`)
+- Added constants module (`src/constants/index.ts`) for UI colors/dimensions
+- Added comprehensive tests for reducer and utils
+
 ### Recent Fixes
 - Fixed ghost rows when toggling filters rapidly (position-based keys for virtual scrolling)
 - Fixed duplicate system extensions (deduplication by bundleId)
 - Refactored launchctl.ts (1260 lines) into 8 focused modules
 - Fixed all lint errors (array index keys, assignment in expressions)
+- Fixed Start action shortcut display (was showing `[s]`, now shows `[↵]`)
 
 ## High Priority (Remaining)
 
@@ -70,7 +83,7 @@ The application is functional with the following features implemented:
 | Task | Description | Status |
 |------|-------------|--------|
 | Split ServiceList.tsx | 451 lines, could be broken into smaller components | ⬚ |
-| Split useAppState.tsx | 556 lines, consider separating concerns | ⬚ |
+| Remove legacy useAppState | Keep Zustand only, remove old Context code | ⬚ |
 | Debounce search input | Prevent filtering on every keystroke | ⬚ |
 | Memoize filtered results | Prevent unnecessary recalculations | ⬚ |
 
@@ -85,13 +98,13 @@ The application is functional with the following features implemented:
 - Basic service listing and details panel
 - Keyboard navigation (vim-style j/k)
 - Search filtering with fuzzy matching
-- Type/domain/status filters
+- Type/domain/status filters with keyboard shortcuts (1-4, [, ])
 - Sort options
 - Action buttons with confirmation dialogs
 - Help panel with keyboard shortcuts
 - Status and protection indicators
 - Mock data for non-macOS development
-- React Context state management
+- **Zustand state management** (migrated from React Context)
 - launchctl and systemextensionsctl parsing
 - Dynamic list height based on terminal size
 - Virtual scrolling for large lists
@@ -111,3 +124,5 @@ The application is functional with the following features implemented:
 - Fuzzy search with scoring
 - System extension deduplication
 - Refactored launchctl module structure
+- Extracted keyboard shortcuts to dedicated hook
+- Centralized UI constants

@@ -10,6 +10,7 @@ A Terminal User Interface (TUI) for managing macOS system services (LaunchDaemon
 
 - **Runtime**: [Bun](https://bun.sh/) v1.0+
 - **UI Framework**: [@opentui/react](https://github.com/anomalyco/opentui) - React reconciler for terminal UIs
+- **State Management**: [Zustand](https://zustand-demo.pmnd.rs/) v5 - Lightweight state management
 - **Language**: TypeScript (strict mode)
 - **Linting/Formatting**: [Biome](https://biomejs.dev/)
 - **Target Platform**: macOS 11+ (Big Sur and later)
@@ -19,16 +20,37 @@ A Terminal User Interface (TUI) for managing macOS system services (LaunchDaemon
 ```bash
 macos-service-manager/
 ├── src/
-│   ├── index.tsx              # Main entry point, keyboard handling
+│   ├── index.tsx              # Main entry point, app shell
 │   ├── types/
 │   │   └── index.ts           # TypeScript type definitions
+│   ├── constants/
+│   │   └── index.ts           # UI constants (colors, dimensions)
+│   ├── store/                 # Zustand state management
+│   │   ├── index.ts           # Store exports
+│   │   ├── useAppStore.ts     # Main Zustand store
+│   │   ├── useAppEffects.ts   # Side effects (auto-refresh, reconnect)
+│   │   └── useDerivedState.ts # Computed/derived state selectors
 │   ├── services/
 │   │   ├── index.ts           # Unified service discovery API
-│   │   ├── launchctl.ts       # launchctl command parsing & execution
+│   │   ├── launchctl/         # launchctl module (modular structure)
+│   │   │   ├── index.ts       # Main exports
+│   │   │   ├── exec.ts        # Command execution
+│   │   │   ├── parsers.ts     # Output parsing
+│   │   │   ├── permissions.ts # Permission checks
+│   │   │   └── errors.ts      # Error handling
 │   │   ├── systemextensions.ts # systemextensionsctl parsing
+│   │   ├── plist.ts           # Plist file parsing
 │   │   └── mock.ts            # Mock data for non-macOS development
 │   ├── hooks/
-│   │   └── useAppState.tsx    # React Context + useReducer state management
+│   │   ├── useAppState/       # Legacy Context + useReducer (kept for reference)
+│   │   │   ├── index.tsx
+│   │   │   ├── reducer.ts
+│   │   │   ├── effects.ts
+│   │   │   └── utils.ts
+│   │   └── useKeyboardShortcuts.tsx # Keyboard event handling
+│   ├── utils/
+│   │   ├── fuzzy.ts           # Fuzzy search implementation
+│   │   └── retry.ts           # Retry logic with backoff
 │   └── components/
 │       ├── index.ts           # Component exports
 │       ├── Header.tsx         # App title bar with stats
@@ -40,10 +62,6 @@ macos-service-manager/
 │       ├── ConfirmDialog.tsx  # Action confirmation modal (centered)
 │       ├── HelpPanel.tsx      # Keyboard shortcuts help (centered)
 │       └── StatusIndicator.tsx # Status icons and colors
-├── docs/
-│   ├── TODO.md               # Prioritized task list
-│   ├── ARCHITECTURE.md       # Technical architecture details
-│   └── SECURITY.md           # Security considerations
 ├── package.json
 ├── tsconfig.json
 ├── biome.json                # Linting/formatting config
@@ -54,24 +72,44 @@ macos-service-manager/
 
 ### State Management
 
-Uses React Context with `useReducer` pattern:
+Uses **Zustand** for global state management (migrated from Context + useReducer):
 
 ```typescript
-interface AppState {
-  services: Service[];           // All discovered services
-  loading: boolean;
-  error: string | null;
-  selectedIndex: number;         // Currently selected in list
-  searchQuery: string;
-  filter: FilterOptions;         // Type/domain/status filters
-  sort: SortOptions;             // Sort field and direction
-  focusedPanel: 'list' | 'details' | 'search' | 'help';
-  showHelp: boolean;
-  showConfirm: boolean;
-  pendingAction: ServiceAction | null;
-  lastActionResult: ActionResult | null;
-}
+// src/store/useAppStore.ts
+const useAppStore = create<AppStoreState & AppStoreActions>((set, get) => ({
+  // State
+  services: [],
+  loading: true,
+  error: null,
+  selectedIndex: 0,
+  searchQuery: '',
+  filter: FilterOptions,
+  sort: SortOptions,
+  focusedPanel: 'list',
+  showHelp: false,
+  showConfirm: false,
+  pendingAction: null,
+  lastActionResult: null,
+  offline: OfflineState,
+  serviceMetadata: Map<string, Partial<Service>>,
+  
+  // Actions (methods that update state)
+  setServices: (services) => set({ services }),
+  selectNext: () => set((state) => ({ selectedIndex: state.selectedIndex + 1 })),
+  refresh: async () => { /* fetch and update */ },
+  executeAction: async (action, service, options) => { /* perform action */ },
+  // ... more actions
+}));
+
+// Usage in components:
+const services = useAppStore((state) => state.services);
+const refresh = useAppStore((state) => state.refresh);
 ```
+
+**Key files:**
+- `src/store/useAppStore.ts` - Main store with state and actions
+- `src/store/useAppEffects.ts` - Side effects (auto-refresh, offline reconnect, metadata prefetch)
+- `src/store/useDerivedState.ts` - Computed selectors (filtered/sorted services, selected service)
 
 ### Service Discovery
 
@@ -160,6 +198,8 @@ Mapped to launchctl commands:
 - `Esc` - Clear search / Cancel
 - `f` - Toggle filter bar
 - `1-4` - Filter by type (All/Daemon/Agent/Extension)
+- `[` - Cycle domain filter (All/System/User/GUI)
+- `]` - Cycle status filter (All/Running/Stopped/Disabled/Error)
 - `a` - Toggle Apple services visibility
 - `p` - Toggle protected services visibility
 
