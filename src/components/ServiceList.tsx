@@ -29,13 +29,80 @@ const BASE_OVERHEAD =
 	LIST_HEADER_HEIGHT +
 	LIST_FOOTER_HEIGHT;
 
+// Column width constants
+const COL_STATUS = 2;
+const COL_PROTECTION = 2;
+const COL_TYPE_DOMAIN_COMBINED = 8; // "D/sys" format
+const COL_TYPE_SEPARATE = 4; // "D" with padding
+const COL_DOMAIN_SEPARATE = 6; // "sys" with padding
+const COL_PID = 8;
+const COL_PADDING = 2; // left + right padding
+const COL_BORDER = 2; // list border
+
+// Minimum width for label to be useful
+const MIN_LABEL_WIDTH = 15;
+// Minimum terminal width to display the list
+const MIN_TERMINAL_WIDTH = COL_STATUS + COL_PROTECTION + COL_TYPE_DOMAIN_COMBINED + COL_PID + COL_PADDING + COL_BORDER + MIN_LABEL_WIDTH;
+// Width threshold to show separate type/domain columns
+const WIDE_TERMINAL_THRESHOLD = 100;
+
+/**
+ * Truncate text with ellipsis if it exceeds maxLength
+ */
+function truncateWithEllipsis(text: string, maxLength: number): string {
+	if (maxLength <= 0) return "";
+	if (text.length <= maxLength) return text;
+	if (maxLength <= 3) return text.substring(0, maxLength);
+	return text.substring(0, maxLength - 1) + "…";
+}
+
+/**
+ * Calculate column layout based on terminal width
+ */
+interface ColumnLayout {
+	labelWidth: number;
+	separateTypeAndDomain: boolean;
+	isTooNarrow: boolean;
+}
+
+function calculateColumnLayout(terminalWidth: number): ColumnLayout {
+	const fixedWidth = COL_STATUS + COL_PROTECTION + COL_PID + COL_PADDING + COL_BORDER;
+	
+	// Check if terminal is too narrow
+	if (terminalWidth < MIN_TERMINAL_WIDTH) {
+		return {
+			labelWidth: Math.max(1, terminalWidth - fixedWidth - COL_TYPE_DOMAIN_COMBINED),
+			separateTypeAndDomain: false,
+			isTooNarrow: true,
+		};
+	}
+	
+	// Wide terminal: show separate type and domain columns
+	if (terminalWidth >= WIDE_TERMINAL_THRESHOLD) {
+		const typeAndDomainWidth = COL_TYPE_SEPARATE + COL_DOMAIN_SEPARATE;
+		return {
+			labelWidth: terminalWidth - fixedWidth - typeAndDomainWidth,
+			separateTypeAndDomain: true,
+			isTooNarrow: false,
+		};
+	}
+	
+	// Normal width: combined type/domain
+	return {
+		labelWidth: terminalWidth - fixedWidth - COL_TYPE_DOMAIN_COMBINED,
+		separateTypeAndDomain: false,
+		isTooNarrow: false,
+	};
+}
+
 interface ServiceRowProps {
 	service: Service;
 	isSelected: boolean;
 	index: number;
+	layout: ColumnLayout;
 }
 
-function ServiceRow({ service, isSelected, index }: ServiceRowProps) {
+function ServiceRow({ service, isSelected, index, layout }: ServiceRowProps) {
 	const statusColor = getStatusColor(service.status);
 	const statusSymbol = getStatusSymbol(service.status);
 	const protectionSymbol = getProtectionSymbol(service.protection);
@@ -62,6 +129,9 @@ function ServiceRow({ service, isSelected, index }: ServiceRowProps) {
 				? "usr"
 				: "gui";
 
+	// Truncate label to fit available width
+	const truncatedLabel = truncateWithEllipsis(service.label, layout.labelWidth);
+
 	return (
 		<box
 			flexDirection="row"
@@ -71,35 +141,46 @@ function ServiceRow({ service, isSelected, index }: ServiceRowProps) {
 			height={1}
 		>
 			{/* Status indicator */}
-			<box width={2}>
+			<box width={COL_STATUS}>
 				<text fg={statusColor}>{statusSymbol}</text>
 			</box>
 
 			{/* Protection indicator */}
-			<box width={2}>
+			<box width={COL_PROTECTION}>
 				<text>{protectionSymbol || " "}</text>
 			</box>
 
-			{/* Type and Domain */}
-			<box width={8}>
-				<text fg="#6b7280">
-					{typeIndicator}/{domainIndicator}
-				</text>
-			</box>
+			{/* Type and Domain - conditional rendering based on width */}
+			{layout.separateTypeAndDomain ? (
+				<>
+					<box width={COL_TYPE_SEPARATE}>
+						<text fg="#6b7280">{typeIndicator}</text>
+					</box>
+					<box width={COL_DOMAIN_SEPARATE}>
+						<text fg="#6b7280">{domainIndicator}</text>
+					</box>
+				</>
+			) : (
+				<box width={COL_TYPE_DOMAIN_COMBINED}>
+					<text fg="#6b7280">
+						{typeIndicator}/{domainIndicator}
+					</text>
+				</box>
+			)}
 
-			{/* Label */}
-			<box flexGrow={1}>
+			{/* Label - width calculated based on terminal size */}
+			<box width={layout.labelWidth}>
 				<text fg={fgColor}>
 					{service.isAppleService ? (
-						<span fg="#9ca3af">{service.label}</span>
+						<span fg="#9ca3af">{truncatedLabel}</span>
 					) : (
-						service.label
+						truncatedLabel
 					)}
 				</text>
 			</box>
 
 			{/* PID */}
-			<box width={8} justifyContent="flex-end">
+			<box width={COL_PID} justifyContent="flex-end">
 				<text fg="#6b7280">{service.pid ? `PID ${service.pid}` : ""}</text>
 			</box>
 		</box>
@@ -108,7 +189,10 @@ function ServiceRow({ service, isSelected, index }: ServiceRowProps) {
 
 export function ServiceList() {
 	const { state, filteredServices } = useAppState();
-	const { height: terminalHeight } = useTerminalDimensions();
+	const { height: terminalHeight, width: terminalWidth } = useTerminalDimensions();
+
+	// Calculate column layout based on terminal width
+	const layout = calculateColumnLayout(terminalWidth);
 
 	// Calculate visible rows based on terminal height
 	// Account for filter bar when visible
@@ -131,6 +215,24 @@ export function ServiceList() {
 
 	const endIndex = Math.min(totalItems, startIndex + visibleRows);
 	const visibleServices = filteredServices.slice(startIndex, endIndex);
+
+	// Show warning if terminal is too narrow
+	if (layout.isTooNarrow) {
+		return (
+			<box
+				flexGrow={1}
+				justifyContent="center"
+				alignItems="center"
+				border
+				borderColor="#f59e0b"
+			>
+				<text fg="#f59e0b">⚠ Terminal too narrow</text>
+				<text fg="#6b7280">Minimum width: {MIN_TERMINAL_WIDTH} columns</text>
+				<text fg="#6b7280">Current width: {terminalWidth} columns</text>
+				<text fg="#6b7280">Please resize your terminal</text>
+			</box>
+		);
+	}
 
 	if (filteredServices.length === 0) {
 		return (
@@ -166,16 +268,28 @@ export function ServiceList() {
 				paddingRight={1}
 				height={1}
 			>
-				<box width={2}>
+				<box width={COL_STATUS}>
 					<text fg="#9ca3af">S</text>
 				</box>
-				<box width={2}>
+				<box width={COL_PROTECTION}>
 					<text fg="#9ca3af">P</text>
 				</box>
-				<box width={8}>
-					<text fg="#9ca3af">Type</text>
-				</box>
-				<box flexGrow={1}>
+				{/* Type and Domain headers - conditional based on width */}
+				{layout.separateTypeAndDomain ? (
+					<>
+						<box width={COL_TYPE_SEPARATE}>
+							<text fg="#9ca3af">Type</text>
+						</box>
+						<box width={COL_DOMAIN_SEPARATE}>
+							<text fg="#9ca3af">Domain</text>
+						</box>
+					</>
+				) : (
+					<box width={COL_TYPE_DOMAIN_COMBINED}>
+						<text fg="#9ca3af">Type</text>
+					</box>
+				)}
+				<box width={layout.labelWidth}>
 					<text fg="#9ca3af">
 						Label
 						{state.sort.field === "label" && (
@@ -186,7 +300,7 @@ export function ServiceList() {
 						)}
 					</text>
 				</box>
-				<box width={8} justifyContent="flex-end">
+				<box width={COL_PID} justifyContent="flex-end">
 					<text fg="#9ca3af">PID</text>
 				</box>
 			</box>
@@ -207,6 +321,7 @@ export function ServiceList() {
 								service={service}
 								isSelected={startIndex + i === state.selectedIndex}
 								index={startIndex + i}
+								layout={layout}
 							/>
 						);
 					}
