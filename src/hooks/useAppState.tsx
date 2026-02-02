@@ -14,7 +14,7 @@ import {
 } from "react";
 import {
 	fetchAllServices,
-	filterServices,
+	filterServicesWithScores,
 	getNextSortField,
 	performServiceAction,
 	sortServices,
@@ -25,12 +25,20 @@ import type {
 	AppContextType,
 	AppState,
 	AutoRefreshConfig,
+	OfflineState,
 	Service,
 	ServiceAction,
+	ServiceMatchInfo,
 } from "../types";
 
 // Default auto-refresh interval (10 seconds)
 const DEFAULT_AUTO_REFRESH_INTERVAL = 10000;
+
+// Number of consecutive failures before entering offline mode
+const OFFLINE_THRESHOLD = 3;
+
+// Reconnect interval when offline (30 seconds)
+const OFFLINE_RECONNECT_INTERVAL = 30000;
 
 /**
  * Check if a service has changed (for smart updates)
@@ -82,6 +90,15 @@ function mergeServices(oldServices: Service[], newServices: Service[]): Service[
 	return hasChanges ? mergedServices : null;
 }
 
+// Initial offline state
+const initialOfflineState: OfflineState = {
+	isOffline: false,
+	consecutiveFailures: 0,
+	lastSuccessfulRefresh: null,
+	cachedServices: [],
+	lastError: null,
+};
+
 // Initial state
 const initialState: AppState = {
 	services: [],
@@ -113,6 +130,7 @@ const initialState: AppState = {
 	},
 	dryRun: false,
 	dryRunCommand: null,
+	offline: initialOfflineState,
 };
 
 // Reducer
@@ -249,6 +267,66 @@ function appReducer(state: AppState, action: AppAction): AppState {
 		case "SET_DRY_RUN_COMMAND":
 			return { ...state, dryRunCommand: action.payload };
 
+		case "FETCH_SUCCESS":
+			return {
+				...state,
+				services: action.payload,
+				loading: false,
+				error: null,
+				selectedIndex: Math.min(
+					state.selectedIndex,
+					Math.max(0, action.payload.length - 1),
+				),
+				offline: {
+					isOffline: false,
+					consecutiveFailures: 0,
+					lastSuccessfulRefresh: new Date(),
+					cachedServices: action.payload,
+					lastError: null,
+				},
+			};
+
+		case "FETCH_FAILURE": {
+			const newFailureCount = state.offline.consecutiveFailures + 1;
+			const shouldGoOffline = newFailureCount >= OFFLINE_THRESHOLD;
+			const hasCachedData = state.offline.cachedServices.length > 0;
+
+			return {
+				...state,
+				loading: false,
+				// Only show error if we have no cached data to fall back on
+				error: hasCachedData ? null : action.payload,
+				// If offline with cached data, use cached services
+				services: shouldGoOffline && hasCachedData
+					? state.offline.cachedServices
+					: state.services,
+				offline: {
+					...state.offline,
+					isOffline: shouldGoOffline,
+					consecutiveFailures: newFailureCount,
+					lastError: action.payload,
+				},
+			};
+		}
+
+		case "SET_ONLINE":
+			return {
+				...state,
+				offline: {
+					...state.offline,
+					isOffline: false,
+					consecutiveFailures: 0,
+					lastError: null,
+				},
+			};
+
+		case "RECONNECT_ATTEMPT":
+			// Mark that we're attempting to reconnect (shows loading indicator)
+			return {
+				...state,
+				loading: true,
+			};
+
 		default:
 			return state;
 	}
@@ -275,15 +353,36 @@ interface AppProviderProps {
 export function useAppProvider() {
 	const [state, dispatch] = useReducer(appReducer, initialState);
 	const autoRefreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const offlineReconnectRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-	// Filtered and sorted services
-	const filteredServices = useMemo(() => {
-		const filtered = filterServices(
+	// Filtered and sorted services with match info
+	const { filteredServices, serviceMatchInfo } = useMemo(() => {
+		const filtered = filterServicesWithScores(
 			state.services,
 			state.filter,
 			state.searchQuery,
 		);
-		return sortServices(filtered, state.sort);
+
+		// Build match info map
+		const matchInfo = new Map<string, ServiceMatchInfo>();
+		for (const item of filtered) {
+			matchInfo.set(item.service.id, {
+				matchScore: item.matchScore,
+				matchField: item.matchField,
+				matchedIndices: item.matchedIndices,
+			});
+		}
+
+		// Extract just the services
+		let services = filtered.map((f) => f.service);
+
+		// When searching, fuzzy match order takes priority
+		// When not searching, apply normal sort
+		if (!state.searchQuery) {
+			services = sortServices(services, state.sort);
+		}
+
+		return { filteredServices: services, serviceMatchInfo: matchInfo };
 	}, [state.services, state.filter, state.searchQuery, state.sort]);
 
 	// Currently selected service
@@ -293,29 +392,40 @@ export function useAppProvider() {
 		return filteredServices[index] ?? null;
 	}, [filteredServices, state.selectedIndex]);
 
-	// Fetch services
+	// Fetch services with offline mode support
 	const refresh = useCallback(async () => {
 		dispatch({ type: "REFRESH" });
 		try {
 			const services = await fetchAllServices();
-			dispatch({ type: "SET_SERVICES", payload: services });
+			dispatch({ type: "FETCH_SUCCESS", payload: services });
 		} catch (error) {
-			dispatch({
-				type: "SET_ERROR",
-				payload:
-					error instanceof Error ? error.message : "Failed to fetch services",
-			});
+			const errorMessage = error instanceof Error ? error.message : "Failed to fetch services";
+			dispatch({ type: "FETCH_FAILURE", payload: errorMessage });
 		}
 	}, []);
 
-	// Silent refresh for auto-refresh (doesn't show loading state)
+	// Silent refresh for auto-refresh (doesn't show loading state initially)
 	const silentRefresh = useCallback(async () => {
 		try {
 			const services = await fetchAllServices();
-			dispatch({ type: "UPDATE_SERVICES", payload: services });
+			// On success during silent refresh, also update offline state
+			dispatch({ type: "FETCH_SUCCESS", payload: services });
 		} catch (error) {
-			// Silently ignore errors during auto-refresh
-			// to avoid spamming the user with error messages
+			// During auto-refresh, track failures but don't show error
+			const errorMessage = error instanceof Error ? error.message : "Failed to fetch services";
+			dispatch({ type: "FETCH_FAILURE", payload: errorMessage });
+		}
+	}, []);
+
+	// Attempt to reconnect when offline
+	const attemptReconnect = useCallback(async () => {
+		dispatch({ type: "RECONNECT_ATTEMPT" });
+		try {
+			const services = await fetchAllServices();
+			dispatch({ type: "FETCH_SUCCESS", payload: services });
+		} catch (error) {
+			// Still offline, just update loading state
+			dispatch({ type: "SET_LOADING", payload: false });
 		}
 	}, []);
 
@@ -365,8 +475,8 @@ export function useAppProvider() {
 			autoRefreshIntervalRef.current = null;
 		}
 
-		// Set up new interval if auto-refresh is enabled
-		if (state.autoRefresh.enabled) {
+		// Set up new interval if auto-refresh is enabled and we're online
+		if (state.autoRefresh.enabled && !state.offline.isOffline) {
 			autoRefreshIntervalRef.current = setInterval(() => {
 				silentRefresh();
 			}, state.autoRefresh.intervalMs);
@@ -379,12 +489,37 @@ export function useAppProvider() {
 				autoRefreshIntervalRef.current = null;
 			}
 		};
-	}, [state.autoRefresh.enabled, state.autoRefresh.intervalMs, silentRefresh]);
+	}, [state.autoRefresh.enabled, state.autoRefresh.intervalMs, state.offline.isOffline, silentRefresh]);
+
+	// Offline reconnect effect - periodically try to reconnect when offline
+	useEffect(() => {
+		// Clear any existing reconnect interval
+		if (offlineReconnectRef.current) {
+			clearInterval(offlineReconnectRef.current);
+			offlineReconnectRef.current = null;
+		}
+
+		// Set up reconnect interval when offline
+		if (state.offline.isOffline) {
+			offlineReconnectRef.current = setInterval(() => {
+				attemptReconnect();
+			}, OFFLINE_RECONNECT_INTERVAL);
+		}
+
+		// Cleanup on unmount or when offline state changes
+		return () => {
+			if (offlineReconnectRef.current) {
+				clearInterval(offlineReconnectRef.current);
+				offlineReconnectRef.current = null;
+			}
+		};
+	}, [state.offline.isOffline, attemptReconnect]);
 
 	const contextValue: AppContextType = {
 		state,
 		dispatch,
 		filteredServices,
+		serviceMatchInfo,
 		selectedService,
 		executeAction,
 		refresh,

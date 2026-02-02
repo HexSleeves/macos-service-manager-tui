@@ -129,6 +129,15 @@ export interface AutoRefreshConfig {
 	intervalMs: number; // Interval in milliseconds
 }
 
+// Offline mode state
+export interface OfflineState {
+	isOffline: boolean;
+	consecutiveFailures: number;
+	lastSuccessfulRefresh: Date | null;
+	cachedServices: Service[];
+	lastError: string | null;
+}
+
 // App state
 export interface AppState {
 	services: Service[];
@@ -148,6 +157,7 @@ export interface AppState {
 	autoRefresh: AutoRefreshConfig; // Auto-refresh settings
 	dryRun: boolean; // When true, show commands without executing them
 	dryRunCommand: string | null; // The command that would be executed in dry-run mode
+	offline: OfflineState; // Offline mode state
 }
 
 // App actions
@@ -176,13 +186,29 @@ export type AppAction =
 	| { type: "SET_AUTO_REFRESH_INTERVAL"; payload: number }
 	| { type: "UPDATE_SERVICES"; payload: Service[] }
 	| { type: "TOGGLE_DRY_RUN" }
-	| { type: "SET_DRY_RUN_COMMAND"; payload: string | null };
+	| { type: "SET_DRY_RUN_COMMAND"; payload: string | null }
+	| { type: "FETCH_SUCCESS"; payload: Service[] }
+	| { type: "FETCH_FAILURE"; payload: string }
+	| { type: "SET_ONLINE" }
+	| { type: "RECONNECT_ATTEMPT" };
+
+// Match metadata for fuzzy search highlighting
+export interface ServiceMatchInfo {
+	/** Fuzzy match score (higher is better) */
+	matchScore: number;
+	/** Which field matched (label, displayName, description) */
+	matchField: "label" | "displayName" | "description";
+	/** Indices of matched characters in the matched field */
+	matchedIndices: number[];
+}
 
 // Context type
 export interface AppContextType {
 	state: AppState;
 	dispatch: React.Dispatch<AppAction>;
 	filteredServices: Service[];
+	/** Match info for each filtered service (same order as filteredServices) */
+	serviceMatchInfo: Map<string, ServiceMatchInfo>;
 	selectedService: Service | null;
 	executeAction: (
 		action: ServiceAction,

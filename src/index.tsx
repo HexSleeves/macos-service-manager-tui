@@ -232,6 +232,18 @@ function AppContent() {
 		// Service actions (only when a service is selected and not a system extension)
 		if (selectedService && selectedService.type !== "SystemExtension") {
 			const requestAction = (action: ServiceAction) => {
+				// Block actions when offline
+				if (state.offline.isOffline) {
+					dispatch({
+						type: "SET_ACTION_RESULT",
+						payload: {
+							success: false,
+							message: "Cannot perform action - offline mode",
+							error: "Connection to launchd unavailable. Waiting for reconnection...",
+						},
+					});
+					return;
+				}
 				if (selectedService.protection !== "normal") {
 					dispatch({
 						type: "SET_ACTION_RESULT",

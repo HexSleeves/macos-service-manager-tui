@@ -35,19 +35,22 @@ function ActionButton({
 	shortcut,
 	disabled,
 	warning,
+	offline,
 }: {
 	label: string;
 	shortcut: string;
 	disabled?: boolean;
 	warning?: boolean;
+	offline?: boolean;
 }) {
-	const bgColor = disabled ? "#374151" : warning ? "#7f1d1d" : "#1e40af";
-	const fgColor = disabled ? "#6b7280" : "#ffffff";
+	const isDisabled = disabled || offline;
+	const bgColor = isDisabled ? "#374151" : warning ? "#7f1d1d" : "#1e40af";
+	const fgColor = isDisabled ? "#6b7280" : "#ffffff";
 
 	return (
 		<box backgroundColor={bgColor} paddingLeft={1} paddingRight={1}>
 			<text fg={fgColor}>
-				[{shortcut}] {label}
+				[{shortcut}] {label}{offline && !disabled ? " (offline)" : ""}
 			</text>
 		</box>
 	);
@@ -75,6 +78,7 @@ export function ServiceDetails() {
 	const isProtected = service.protection !== "normal";
 	const isRunning = service.status === "running";
 	const isSystemExt = service.type === "SystemExtension";
+	const isOffline = state.offline.isOffline;
 
 	// Cast for system extension properties
 	const sysExt =
@@ -188,6 +192,19 @@ export function ServiceDetails() {
 				</box>
 			)}
 
+			{/* Offline notice */}
+			{isOffline && !isSystemExt && (
+				<box
+					marginTop={1}
+					marginLeft={1}
+					marginRight={1}
+					padding={1}
+					backgroundColor="#374151"
+				>
+					<text fg="#9ca3af">⚡ Actions unavailable - offline mode</text>
+				</box>
+			)}
+
 			{/* Actions */}
 			{!isSystemExt && (
 				<box
@@ -200,13 +217,14 @@ export function ServiceDetails() {
 					<text fg="#9ca3af">Actions:</text>
 					<box flexDirection="row" flexWrap="wrap" gap={1}>
 						{!isRunning && (
-							<ActionButton label="Start" shortcut="s" disabled={isProtected} />
+							<ActionButton label="Start" shortcut="s" disabled={isProtected} offline={isOffline} />
 						)}
 						{isRunning && (
 							<ActionButton
 								label="Stop"
 								shortcut="x"
 								disabled={isProtected}
+								offline={isOffline}
 								warning
 							/>
 						)}
@@ -215,17 +233,20 @@ export function ServiceDetails() {
 								label="Reload"
 								shortcut="r"
 								disabled={isProtected}
+								offline={isOffline}
 							/>
 						)}
 						<ActionButton
 							label={service.enabled ? "Disable" : "Enable"}
 							shortcut="d"
 							disabled={isProtected}
+							offline={isOffline}
 						/>
 						<ActionButton
 							label="Unload"
 							shortcut="u"
 							disabled={isProtected}
+							offline={isOffline}
 							warning
 						/>
 					</box>
