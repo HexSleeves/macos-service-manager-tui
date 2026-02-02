@@ -3,6 +3,7 @@
  * Filter controls for services
  */
 
+import { useTerminalDimensions } from "@opentui/react";
 import { useAppState } from "../hooks/useAppState";
 
 // Shared layout constants for consistent alignment
@@ -75,35 +76,29 @@ function TogglePill({ label, active, shortcut }: TogglePillProps) {
 export function FilterBar() {
 	const { state } = useAppState();
 	const { filter, sort } = state;
+	const { height: terminalHeight } = useTerminalDimensions();
+
+	// Use compact layout on small terminals (< 25 rows)
+	const isCompact = terminalHeight < 25;
+	const padding = isCompact ? 0 : 1;
+	const gap = isCompact ? 0 : 1;
 
 	return (
 		<box
 			flexDirection="column"
 			backgroundColor="#1f2937"
-			paddingTop={1}
-			paddingBottom={1}
-			paddingLeft={2}
-			paddingRight={1}
-			gap={1}
+			paddingTop={padding}
+			paddingBottom={padding}
+			paddingLeft={isCompact ? 1 : 2}
+			paddingRight={padding}
+			gap={gap}
 		>
 			{/* Type filter */}
 			<FilterRow label="Type:">
 				<FilterButton label="All" active={filter.type === "all"} shortcut="1" />
-				<FilterButton
-					label="Daemons"
-					active={filter.type === "LaunchDaemon"}
-					shortcut="2"
-				/>
-				<FilterButton
-					label="Agents"
-					active={filter.type === "LaunchAgent"}
-					shortcut="3"
-				/>
-				<FilterButton
-					label="SysExt"
-					active={filter.type === "SystemExtension"}
-					shortcut="4"
-				/>
+				<FilterButton label="Daemons" active={filter.type === "LaunchDaemon"} shortcut="2" />
+				<FilterButton label="Agents" active={filter.type === "LaunchAgent"} shortcut="3" />
+				<FilterButton label="SysExt" active={filter.type === "SystemExtension"} shortcut="4" />
 			</FilterRow>
 
 			{/* Domain filter */}
@@ -127,16 +122,8 @@ export function FilterBar() {
 
 			{/* Toggles */}
 			<FilterRow label="Show:">
-				<TogglePill
-					label="Apple/macOS Services"
-					active={filter.showAppleServices}
-					shortcut="a"
-				/>
-				<TogglePill
-					label="Protected"
-					active={filter.showProtected}
-					shortcut="p"
-				/>
+				<TogglePill label="Apple/macOS Services" active={filter.showAppleServices} shortcut="a" />
+				<TogglePill label="Protected" active={filter.showProtected} shortcut="p" />
 			</FilterRow>
 
 			{/* Sort info */}

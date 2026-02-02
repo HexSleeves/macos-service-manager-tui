@@ -16,11 +16,7 @@ import type {
 import { describePlistConfig, readPlist } from "../plist";
 import { parseErrorMessage } from "./errors";
 import { execCommand, execCommandWithRetry, setRetryLogger } from "./exec";
-import {
-	normalizePrintKey,
-	parseLaunchctlList,
-	parseLaunchctlPrint,
-} from "./parsers";
+import { normalizePrintKey, parseLaunchctlList, parseLaunchctlPrint } from "./parsers";
 import {
 	getCurrentUid,
 	getProtectionStatus,
@@ -68,10 +64,9 @@ export {
 
 /**
  * Find plist path for a service
+ * Checks all directories in parallel for better performance
  */
-export async function findPlistPath(
-	label: string,
-): Promise<string | undefined> {
+export async function findPlistPath(label: string): Promise<string | undefined> {
 	const searchDirs = [
 		"/System/Library/LaunchDaemons",
 		"/System/Library/LaunchAgents",
@@ -80,12 +75,27 @@ export async function findPlistPath(
 		`${process.env.HOME}/Library/LaunchAgents`,
 	];
 
-	for (const dir of searchDirs) {
-		const path = `${dir}/${label}.plist`;
-		try {
-			const file = Bun.file(path);
-			if (await file.exists()) return path;
-		} catch {}
+	// Check all directories in parallel
+	const checks = await Promise.allSettled(
+		searchDirs.map(async (dir) => {
+			const path = `${dir}/${label}.plist`;
+			try {
+				const file = Bun.file(path);
+				if (await file.exists()) {
+					return path;
+				}
+			} catch {
+				// Ignore errors for individual checks
+			}
+			return undefined;
+		}),
+	);
+
+	// Return the first successful result
+	for (const result of checks) {
+		if (result.status === "fulfilled" && result.value) {
+			return result.value;
+		}
 	}
 
 	return undefined;
@@ -126,12 +136,8 @@ export async function getPlistMetadata(plistPath: string | undefined): Promise<{
 			processType: plistData.processType,
 			watchPaths: plistData.watchPaths,
 			queueDirectories: plistData.queueDirectories,
-			hasSockets: plistData.sockets
-				? Object.keys(plistData.sockets).length > 0
-				: false,
-			hasMachServices: plistData.machServices
-				? Object.keys(plistData.machServices).length > 0
-				: false,
+			hasSockets: plistData.sockets ? Object.keys(plistData.sockets).length > 0 : false,
+			hasMachServices: plistData.machServices ? Object.keys(plistData.machServices).length > 0 : false,
 		};
 
 		const description = describePlistConfig(plistData);
@@ -153,9 +159,7 @@ export async function listServices(): Promise<Service[]> {
 
 	// Throw if launchctl list fails - this is a critical failure
 	if (listResult.exitCode !== 0) {
-		throw new Error(
-			`Failed to list services: ${listResult.stderr || "Unknown error"}`,
-		);
+		throw new Error(`Failed to list services: ${listResult.stderr || "Unknown error"}`);
 	}
 
 	const parsed = parseLaunchctlList(listResult.stdout);
@@ -173,9 +177,7 @@ export async function listServices(): Promise<Service[]> {
 		const isDaemon = label.includes("daemon");
 		// Default to user domain - will be refined when plist path is known
 		const domain: ServiceDomain = "user";
-		const type: "LaunchDaemon" | "LaunchAgent" = isDaemon
-			? "LaunchDaemon"
-			: "LaunchAgent";
+		const type: "LaunchDaemon" | "LaunchAgent" = isDaemon ? "LaunchDaemon" : "LaunchAgent";
 		// Conservative: assume root required for daemons, not for agents
 		// This will be refined when plist metadata is loaded
 		const needsRoot = isDaemon;
@@ -220,8 +222,7 @@ export async function fetchServiceMetadata(service: Service): Promise<{
 	}
 
 	const plistPath = await findPlistPath(service.label);
-	const { metadata: plistMetadata, description } =
-		await getPlistMetadata(plistPath);
+	const { metadata: plistMetadata, description } = await getPlistMetadata(plistPath);
 
 	// Refine protection and Apple status with plist path
 	const protection = getProtectionStatus(service.label, plistPath);
@@ -229,15 +230,12 @@ export async function fetchServiceMetadata(service: Service): Promise<{
 
 	// Refine type and domain based on plist path
 	let type: "LaunchDaemon" | "LaunchAgent" =
-		service.type === "LaunchDaemon" || service.type === "LaunchAgent"
-			? service.type
-			: "LaunchAgent"; // Default for SystemExtension (shouldn't happen)
+		service.type === "LaunchDaemon" || service.type === "LaunchAgent" ? service.type : "LaunchAgent"; // Default for SystemExtension (shouldn't happen)
 	let domain: ServiceDomain = service.domain;
 
 	if (plistPath) {
 		const isDaemon = plistPath.includes("LaunchDaemons");
-		const isSystemLevel =
-			plistPath.startsWith("/Library/") || plistPath.startsWith("/System/");
+		const isSystemLevel = plistPath.startsWith("/Library/") || plistPath.startsWith("/System/");
 
 		type = isDaemon ? "LaunchDaemon" : "LaunchAgent";
 		domain = isSystemLevel ? "system" : "user";
@@ -265,12 +263,8 @@ export async function getServiceInfo(
 	domain: ServiceDomain,
 	type: "LaunchDaemon" | "LaunchAgent",
 ): Promise<Service | null> {
-	const target =
-		domain === "system" ? "system" : `user/${process.getuid?.() || 501}`;
-	const result = await execCommand("launchctl", [
-		"print",
-		`${target}/${label}`,
-	]);
+	const target = domain === "system" ? "system" : `user/${process.getuid?.() || 501}`;
+	const result = await execCommand("launchctl", ["print", `${target}/${label}`]);
 
 	if (result.exitCode !== 0) return null;
 
@@ -279,13 +273,10 @@ export async function getServiceInfo(
 	const protection = getProtectionStatus(label, plistPath);
 	const apple = isAppleService(label, plistPath);
 	const needsRoot = requiresRoot(domain, plistPath);
-	const { metadata: plistMetadata, description } =
-		await getPlistMetadata(plistPath);
+	const { metadata: plistMetadata, description } = await getPlistMetadata(plistPath);
 
 	const pid = info.pid ? parseInt(info.pid, 10) : undefined;
-	const exitStatus = info.last_exit_status
-		? parseInt(info.last_exit_status, 10)
-		: undefined;
+	const exitStatus = info.last_exit_status ? parseInt(info.last_exit_status, 10) : undefined;
 	const enabled = info.state !== "disabled";
 
 	return {
@@ -339,10 +330,7 @@ export async function executeServiceAction(
 		};
 	}
 
-	if (
-		service.protection === "sip-protected" ||
-		service.protection === "immutable"
-	) {
+	if (service.protection === "sip-protected" || service.protection === "immutable") {
 		return {
 			success: false,
 			message: `Cannot ${action} service`,

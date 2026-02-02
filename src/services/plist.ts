@@ -261,8 +261,7 @@ function parseArrayContent(content: string): unknown[] {
 	const result: unknown[] = [];
 
 	// Match each element in the array
-	const elementRegex =
-		/<(string|integer|real|true|false|array|dict|data|date)(\s*\/|>[\s\S]*?<\/\1)>/g;
+	const elementRegex = /<(string|integer|real|true|false|array|dict|data|date)(\s*\/|>[\s\S]*?<\/\1)>/g;
 
 	let match: RegExpExecArray | null = elementRegex.exec(content);
 	while (match !== null) {
@@ -300,9 +299,7 @@ function mapToPlistData(raw: Record<string, unknown>): PlistData {
 	}
 
 	if (Array.isArray(raw.ProgramArguments)) {
-		data.programArguments = raw.ProgramArguments.filter(
-			(a): a is string => typeof a === "string",
-		);
+		data.programArguments = raw.ProgramArguments.filter((a): a is string => typeof a === "string");
 	}
 
 	if (typeof raw.RunAtLoad === "boolean") {
@@ -319,14 +316,8 @@ function mapToPlistData(raw: Record<string, unknown>): PlistData {
 		data.workingDirectory = raw.WorkingDirectory;
 	}
 
-	if (
-		typeof raw.EnvironmentVariables === "object" &&
-		raw.EnvironmentVariables !== null
-	) {
-		data.environmentVariables = raw.EnvironmentVariables as Record<
-			string,
-			string
-		>;
+	if (typeof raw.EnvironmentVariables === "object" && raw.EnvironmentVariables !== null) {
+		data.environmentVariables = raw.EnvironmentVariables as Record<string, string>;
 	}
 
 	if (typeof raw.StandardOutPath === "string") {
@@ -343,11 +334,9 @@ function mapToPlistData(raw: Record<string, unknown>): PlistData {
 
 	if (raw.StartCalendarInterval) {
 		if (Array.isArray(raw.StartCalendarInterval)) {
-			data.startCalendarInterval =
-				raw.StartCalendarInterval as CalendarInterval[];
+			data.startCalendarInterval = raw.StartCalendarInterval as CalendarInterval[];
 		} else {
-			data.startCalendarInterval =
-				raw.StartCalendarInterval as CalendarInterval;
+			data.startCalendarInterval = raw.StartCalendarInterval as CalendarInterval;
 		}
 	}
 
@@ -392,15 +381,11 @@ function mapToPlistData(raw: Record<string, unknown>): PlistData {
 	}
 
 	if (Array.isArray(raw.WatchPaths)) {
-		data.watchPaths = raw.WatchPaths.filter(
-			(p): p is string => typeof p === "string",
-		);
+		data.watchPaths = raw.WatchPaths.filter((p): p is string => typeof p === "string");
 	}
 
 	if (Array.isArray(raw.QueueDirectories)) {
-		data.queueDirectories = raw.QueueDirectories.filter(
-			(p): p is string => typeof p === "string",
-		);
+		data.queueDirectories = raw.QueueDirectories.filter((p): p is string => typeof p === "string");
 	}
 
 	if (typeof raw.Sockets === "object" && raw.Sockets !== null) {
@@ -411,10 +396,7 @@ function mapToPlistData(raw: Record<string, unknown>): PlistData {
 		data.machServices = raw.MachServices as Record<string, unknown>;
 	}
 
-	if (
-		typeof raw.inetdCompatibility === "object" &&
-		raw.inetdCompatibility !== null
-	) {
+	if (typeof raw.inetdCompatibility === "object" && raw.inetdCompatibility !== null) {
 		data.inetdCompatibility = raw.inetdCompatibility as { wait: boolean };
 	}
 

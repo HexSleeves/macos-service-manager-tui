@@ -4,54 +4,24 @@
  */
 
 import { useTerminalDimensions } from "@opentui/react";
+import {
+	BASE_OVERHEAD,
+	COL_BORDER,
+	COL_DOMAIN_SEPARATE,
+	COL_PADDING,
+	COL_PID,
+	COL_PROTECTION,
+	COL_STATUS,
+	COL_TYPE_DOMAIN_COMBINED,
+	COL_TYPE_SEPARATE,
+	COLORS,
+	FILTER_BAR_HEIGHT,
+	MIN_TERMINAL_WIDTH,
+	WIDE_TERMINAL_THRESHOLD,
+} from "../constants";
 import { useAppState } from "../hooks/useAppState";
 import type { Service, ServiceMatchInfo } from "../types";
-import {
-	getProtectionSymbol,
-	getStatusColor,
-	getStatusSymbol,
-} from "./StatusIndicator";
-
-// Fixed UI element heights
-const HEADER_HEIGHT = 3;
-const SEARCH_BAR_HEIGHT = 1;
-const FILTER_BAR_HEIGHT = 8; // 6 rows (Type, Domain, Status, Show, Sort, blank) + 2 padding
-const FOOTER_HEIGHT = 3;
-const LIST_BORDER_HEIGHT = 2; // top + bottom border
-const LIST_HEADER_HEIGHT = 1;
-const LIST_FOOTER_HEIGHT = 1; // scroll indicator row
-
-const BASE_OVERHEAD =
-	HEADER_HEIGHT +
-	SEARCH_BAR_HEIGHT +
-	FOOTER_HEIGHT +
-	LIST_BORDER_HEIGHT +
-	LIST_HEADER_HEIGHT +
-	LIST_FOOTER_HEIGHT;
-
-// Column width constants
-const COL_STATUS = 2;
-const COL_PROTECTION = 2;
-const COL_TYPE_DOMAIN_COMBINED = 8; // "D/sys" format
-const COL_TYPE_SEPARATE = 4; // "D" with padding
-const COL_DOMAIN_SEPARATE = 6; // "sys" with padding
-const COL_PID = 8;
-const COL_PADDING = 2; // left + right padding
-const COL_BORDER = 2; // list border
-
-// Minimum width for label to be useful
-const MIN_LABEL_WIDTH = 15;
-// Minimum terminal width to display the list
-const MIN_TERMINAL_WIDTH =
-	COL_STATUS +
-	COL_PROTECTION +
-	COL_TYPE_DOMAIN_COMBINED +
-	COL_PID +
-	COL_PADDING +
-	COL_BORDER +
-	MIN_LABEL_WIDTH;
-// Width threshold to show separate type/domain columns
-const WIDE_TERMINAL_THRESHOLD = 100;
+import { getProtectionSymbol, getStatusColor, getStatusSymbol } from "./StatusIndicator";
 
 /**
  * Truncate text with ellipsis if it exceeds maxLength
@@ -73,16 +43,12 @@ interface ColumnLayout {
 }
 
 function calculateColumnLayout(terminalWidth: number): ColumnLayout {
-	const fixedWidth =
-		COL_STATUS + COL_PROTECTION + COL_PID + COL_PADDING + COL_BORDER;
+	const fixedWidth = COL_STATUS + COL_PROTECTION + COL_PID + COL_PADDING + COL_BORDER;
 
 	// Check if terminal is too narrow
 	if (terminalWidth < MIN_TERMINAL_WIDTH) {
 		return {
-			labelWidth: Math.max(
-				1,
-				terminalWidth - fixedWidth - COL_TYPE_DOMAIN_COMBINED,
-			),
+			labelWidth: Math.max(1, terminalWidth - fixedWidth - COL_TYPE_DOMAIN_COMBINED),
 			separateTypeAndDomain: false,
 			isTooNarrow: true,
 		};
@@ -133,7 +99,7 @@ function HighlightedText({
 	dimmed?: boolean;
 }) {
 	if (matchedIndices.length === 0) {
-		return <text fg={dimmed ? "#9ca3af" : baseColor}>{text}</text>;
+		return <text fg={dimmed ? COLORS.textTertiary : baseColor}>{text}</text>;
 	}
 
 	const matchSet = new Set(matchedIndices);
@@ -158,18 +124,32 @@ function HighlightedText({
 		segments.push({ text: currentSegment, highlighted: currentHighlighted });
 	}
 
+	// Optimize: merge very small segments (< 2 chars) with adjacent segments to reduce element count
+	// This reduces React element overhead while maintaining visual appearance
+	const optimizedSegments: Array<{ text: string; highlighted: boolean }> = [];
+	for (let i = 0; i < segments.length; i++) {
+		const seg = segments[i];
+		if (!seg) continue;
+		if (seg.text.length < 2 && optimizedSegments.length > 0) {
+			// Merge small segment with previous segment
+			const prev = optimizedSegments[optimizedSegments.length - 1];
+			if (prev) {
+				prev.text += seg.text;
+			}
+		} else {
+			optimizedSegments.push({ text: seg.text, highlighted: seg.highlighted });
+		}
+	}
+
 	return (
 		<text>
-			{segments.map((seg, i) =>
+			{optimizedSegments.map((seg, i) =>
 				seg.highlighted ? (
-					<b key={`hl-${i}-${seg.text}`}>
+					<b key={`hl-${i}-${seg.text.substring(0, 10)}`}>
 						<span fg={highlightColor}>{seg.text}</span>
 					</b>
 				) : (
-					<span
-						key={`txt-${i}-${seg.text}`}
-						fg={dimmed ? "#9ca3af" : baseColor}
-					>
+					<span key={`txt-${i}-${seg.text.substring(0, 10)}`} fg={dimmed ? COLORS.textTertiary : baseColor}>
 						{seg.text}
 					</span>
 				),
@@ -178,53 +158,24 @@ function HighlightedText({
 	);
 }
 
-function ServiceRow({
-	key,
-	service,
-	isSelected,
-	index,
-	layout,
-	matchInfo,
-	hasSearchQuery,
-}: ServiceRowProps) {
+function ServiceRow({ key, service, isSelected, index, layout, matchInfo, hasSearchQuery }: ServiceRowProps) {
 	const statusColor = getStatusColor(service.status);
 	const statusSymbol = getStatusSymbol(service.status);
 	const protectionSymbol = getProtectionSymbol(service.protection);
 
-	const bgColor = isSelected
-		? "#2563eb"
-		: index % 2 === 0
-			? "#1f2937"
-			: "#111827";
-	const fgColor = isSelected ? "#ffffff" : "#e5e7eb";
+	const bgColor = isSelected ? COLORS.bgSelected : index % 2 === 0 ? COLORS.bgSecondary : COLORS.bgPrimary;
+	const fgColor = isSelected ? COLORS.textPrimary : COLORS.textSecondary;
 
 	// Type indicator
-	const typeIndicator =
-		service.type === "LaunchDaemon"
-			? "D"
-			: service.type === "LaunchAgent"
-				? "A"
-				: "E";
+	const typeIndicator = service.type === "LaunchDaemon" ? "D" : service.type === "LaunchAgent" ? "A" : "E";
 
-	const domainIndicator =
-		service.domain === "system"
-			? "sys"
-			: service.domain === "user"
-				? "usr"
-				: "gui";
+	const domainIndicator = service.domain === "system" ? "sys" : service.domain === "user" ? "usr" : "gui";
 
 	// Truncate label to fit available width
 	const truncatedLabel = truncateWithEllipsis(service.label, layout.labelWidth);
 
 	return (
-		<box
-			key={key}
-			flexDirection="row"
-			backgroundColor={bgColor}
-			paddingLeft={1}
-			paddingRight={1}
-			height={1}
-		>
+		<box key={key} flexDirection="row" backgroundColor={bgColor} paddingLeft={1} paddingRight={1} height={1}>
 			{/* Status indicator */}
 			<box width={COL_STATUS}>
 				<text fg={statusColor}>{statusSymbol}</text>
@@ -239,15 +190,15 @@ function ServiceRow({
 			{layout.separateTypeAndDomain ? (
 				<>
 					<box width={COL_TYPE_SEPARATE}>
-						<text fg="#6b7280">{typeIndicator}</text>
+						<text fg={COLORS.textMuted}>{typeIndicator}</text>
 					</box>
 					<box width={COL_DOMAIN_SEPARATE}>
-						<text fg="#6b7280">{domainIndicator}</text>
+						<text fg={COLORS.textMuted}>{domainIndicator}</text>
 					</box>
 				</>
 			) : (
 				<box width={COL_TYPE_DOMAIN_COMBINED}>
-					<text fg="#6b7280">
+					<text fg={COLORS.textMuted}>
 						{typeIndicator}/{domainIndicator}
 					</text>
 				</box>
@@ -258,27 +209,21 @@ function ServiceRow({
 				{hasSearchQuery && matchInfo && matchInfo.matchField === "label" ? (
 					<HighlightedText
 						text={truncatedLabel}
-						matchedIndices={matchInfo.matchedIndices.filter(
-							(i) => i < truncatedLabel.length,
-						)}
+						matchedIndices={matchInfo.matchedIndices.filter((i) => i < truncatedLabel.length)}
 						baseColor={fgColor}
-						highlightColor={isSelected ? "#fbbf24" : "#22c55e"}
+						highlightColor={isSelected ? COLORS.textPrimary : COLORS.textSuccess}
 						dimmed={service.isAppleService}
 					/>
 				) : (
 					<text fg={fgColor}>
-						{service.isAppleService ? (
-							<span fg="#9ca3af">{truncatedLabel}</span>
-						) : (
-							truncatedLabel
-						)}
+						{service.isAppleService ? <span fg={COLORS.textTertiary}>{truncatedLabel}</span> : truncatedLabel}
 					</text>
 				)}
 			</box>
 
 			{/* PID */}
 			<box width={COL_PID} justifyContent="flex-end">
-				<text fg="#6b7280">{service.pid ? `PID ${service.pid}` : ""}</text>
+				<text fg={COLORS.textMuted}>{service.pid ? `PID ${service.pid}` : ""}</text>
 			</box>
 		</box>
 	);
@@ -286,15 +231,19 @@ function ServiceRow({
 
 export function ServiceList() {
 	const { state, filteredServices, serviceMatchInfo } = useAppState();
-	const { height: terminalHeight, width: terminalWidth } =
-		useTerminalDimensions();
+	const { height: terminalHeight, width: terminalWidth } = useTerminalDimensions();
 
 	// Calculate column layout based on terminal width
 	const layout = calculateColumnLayout(terminalWidth);
 
 	// Calculate visible rows based on terminal height
-	// Account for filter bar when visible
-	const overhead = BASE_OVERHEAD + (state.showFilters ? FILTER_BAR_HEIGHT : 0);
+	// Account for filter bar when visible - use compact height on small terminals
+	const filterBarHeight = state.showFilters
+		? terminalHeight < 25
+			? 6 // Compact mode: reduced padding/gaps
+			: FILTER_BAR_HEIGHT
+		: 0;
+	const overhead = BASE_OVERHEAD + filterBarHeight;
 	const visibleRows = Math.max(1, terminalHeight - overhead);
 
 	// Calculate visible window - keep selected item in view
@@ -317,36 +266,20 @@ export function ServiceList() {
 	// Show warning if terminal is too narrow
 	if (layout.isTooNarrow) {
 		return (
-			<box
-				flexGrow={1}
-				justifyContent="center"
-				alignItems="center"
-				border
-				borderColor="#f59e0b"
-			>
-				<text fg="#f59e0b">⚠ Terminal too narrow</text>
-				<text fg="#6b7280">Minimum width: {MIN_TERMINAL_WIDTH} columns</text>
-				<text fg="#6b7280">Current width: {terminalWidth} columns</text>
-				<text fg="#6b7280">Please resize your terminal</text>
+			<box flexGrow={1} justifyContent="center" alignItems="center" border borderColor={COLORS.textWarning}>
+				<text fg={COLORS.textWarning}>⚠ Terminal too narrow</text>
+				<text fg={COLORS.textMuted}>Minimum width: {MIN_TERMINAL_WIDTH} columns</text>
+				<text fg={COLORS.textMuted}>Current width: {terminalWidth} columns</text>
+				<text fg={COLORS.textMuted}>Please resize your terminal</text>
 			</box>
 		);
 	}
 
 	if (filteredServices.length === 0) {
 		return (
-			<box
-				flexGrow={1}
-				justifyContent="center"
-				alignItems="center"
-				border
-				borderColor="#374151"
-			>
-				<text fg="#6b7280">
-					{state.loading ? "Loading services..." : "No services found"}
-				</text>
-				{state.searchQuery && (
-					<text fg="#6b7280">Try adjusting your search or filters</text>
-				)}
+			<box flexGrow={1} justifyContent="center" alignItems="center" border borderColor={COLORS.bgTertiary}>
+				<text fg={COLORS.textMuted}>{state.loading ? "Loading services..." : "No services found"}</text>
+				{state.searchQuery && <text fg={COLORS.textMuted}>Try adjusting your search or filters</text>}
 			</box>
 		);
 	}
@@ -356,50 +289,48 @@ export function ServiceList() {
 			flexDirection="column"
 			flexGrow={1}
 			border
-			borderColor={state.focusedPanel === "list" ? "#3b82f6" : "#374151"}
+			borderColor={state.focusedPanel === "list" ? COLORS.bgFocus : COLORS.bgTertiary}
 		>
 			{/* List header */}
 			<box
 				flexDirection="row"
-				backgroundColor="#374151"
+				backgroundColor={COLORS.bgTertiary}
 				paddingLeft={1}
 				paddingRight={1}
 				height={1}
 			>
+				{state.focusedPanel === "list" && <text fg={COLORS.bgFocus}>▶ </text>}
 				<box width={COL_STATUS}>
-					<text fg="#9ca3af">S</text>
+					<text fg={COLORS.textTertiary}>S</text>
 				</box>
 				<box width={COL_PROTECTION}>
-					<text fg="#9ca3af">P</text>
+					<text fg={COLORS.textTertiary}>P</text>
 				</box>
 				{/* Type and Domain headers - conditional based on width */}
 				{layout.separateTypeAndDomain ? (
 					<>
 						<box width={COL_TYPE_SEPARATE}>
-							<text fg="#9ca3af">Type</text>
+							<text fg={COLORS.textTertiary}>Type</text>
 						</box>
 						<box width={COL_DOMAIN_SEPARATE}>
-							<text fg="#9ca3af">Domain</text>
+							<text fg={COLORS.textTertiary}>Domain</text>
 						</box>
 					</>
 				) : (
 					<box width={COL_TYPE_DOMAIN_COMBINED}>
-						<text fg="#9ca3af">Type</text>
+						<text fg={COLORS.textTertiary}>Type</text>
 					</box>
 				)}
 				<box width={layout.labelWidth}>
-					<text fg="#9ca3af">
+					<text fg={COLORS.textTertiary}>
 						Label
 						{state.sort.field === "label" && (
-							<span fg="#60a5fa">
-								{" "}
-								{state.sort.direction === "asc" ? "▲" : "▼"}
-							</span>
+							<span fg={COLORS.textAccent}> {state.sort.direction === "asc" ? "▲" : "▼"}</span>
 						)}
 					</text>
 				</box>
 				<box width={COL_PID} justifyContent="flex-end">
-					<text fg="#9ca3af">PID</text>
+					<text fg={COLORS.textTertiary}>PID</text>
 				</box>
 			</box>
 
@@ -437,7 +368,7 @@ export function ServiceList() {
 							// biome-ignore lint/suspicious/noArrayIndexKey: position-based keys required for virtual scrolling
 							key={`empty-${i}`}
 							height={1}
-							backgroundColor={i % 2 === 0 ? "#1f2937" : "#111827"}
+							backgroundColor={i % 2 === 0 ? COLORS.bgSecondary : COLORS.bgPrimary}
 						>
 							<text> </text>
 						</box>
@@ -451,10 +382,10 @@ export function ServiceList() {
 				justifyContent="space-between"
 				paddingLeft={1}
 				paddingRight={1}
-				backgroundColor="#1f2937"
+				backgroundColor={COLORS.bgSecondary}
 				height={1}
 			>
-				<text fg="#6b7280">
+				<text fg={COLORS.textMuted}>
 					{state.selectedIndex + 1} / {filteredServices.length}
 				</text>
 				<text fg="#6b7280">

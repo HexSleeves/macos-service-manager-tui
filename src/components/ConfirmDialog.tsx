@@ -56,16 +56,8 @@ export function ConfirmDialog() {
 	const isDryRun = state.dryRun;
 
 	// Determine border color: orange for dry-run, red for destructive, blue otherwise
-	const borderColor = isDryRun
-		? "#f97316"
-		: isDestructive
-			? "#ef4444"
-			: "#3b82f6";
-	const titleColor = isDryRun
-		? "#f97316"
-		: isDestructive
-			? "#ef4444"
-			: "#60a5fa";
+	const borderColor = isDryRun ? "#f97316" : isDestructive ? "#ef4444" : "#3b82f6";
+	const titleColor = isDryRun ? "#f97316" : isDestructive ? "#ef4444" : "#60a5fa";
 
 	return (
 		<box
@@ -87,16 +79,12 @@ export function ConfirmDialog() {
 				gap={1}
 			>
 				<text fg={titleColor}>
-					<strong>
-						{isDryRun ? "🔍 DRY RUN - Preview Action" : "⚠ Confirm Action"}
-					</strong>
+					<strong>{isDryRun ? "🔍 DRY RUN - Preview Action" : "⚠ Confirm Action"}</strong>
 				</text>
 
 				{isDryRun && (
 					<box marginTop={1} padding={1} backgroundColor="#78350f">
-						<text fg="#fbbf24">
-							Dry-run mode: This will show the command without executing it
-						</text>
+						<text fg="#fbbf24">Dry-run mode: This will show the command without executing it</text>
 					</box>
 				)}
 
@@ -114,29 +102,19 @@ export function ConfirmDialog() {
 
 				{service.requiresRoot && (
 					<box marginTop={1}>
-						<text fg="#fbbf24">
-							🔑 This action requires administrator privileges.
-						</text>
+						<text fg="#fbbf24">🔑 This action requires administrator privileges.</text>
 					</box>
 				)}
 
 				{isDestructive && !isDryRun && (
 					<box marginTop={1}>
-						<text fg="#f87171">
-							This may affect system stability or running applications.
-						</text>
+						<text fg="#f87171">This may affect system stability or running applications.</text>
 					</box>
 				)}
 
 				<box flexDirection="row" gap={4} marginTop={2} justifyContent="center">
-					<box
-						backgroundColor={isDryRun ? "#b45309" : "#22c55e"}
-						paddingLeft={2}
-						paddingRight={2}
-					>
-						<text fg="#ffffff">
-							[Enter] {isDryRun ? "Show Command" : "Confirm"}
-						</text>
+					<box backgroundColor={isDryRun ? "#b45309" : "#22c55e"} paddingLeft={2} paddingRight={2}>
+						<text fg="#ffffff">[Enter] {isDryRun ? "Show Command" : "Confirm"}</text>
 					</box>
 					<box backgroundColor="#374151" paddingLeft={2} paddingRight={2}>
 						<text fg="#ffffff">[ESC] Cancel</text>

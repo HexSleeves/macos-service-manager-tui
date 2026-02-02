@@ -11,16 +11,10 @@ export interface ParsedError {
 /**
  * Parse launchctl error messages into user-friendly format
  */
-export function parseErrorMessage(
-	stderr: string,
-	exitCode: number,
-): ParsedError {
+export function parseErrorMessage(stderr: string, exitCode: number): ParsedError {
 	const lower = stderr.toLowerCase();
 
-	if (
-		lower.includes("operation not permitted") ||
-		lower.includes("permission denied")
-	) {
+	if (lower.includes("operation not permitted") || lower.includes("permission denied")) {
 		return {
 			message: "Permission denied - may require administrator privileges",
 			requiresRoot: true,
@@ -36,10 +30,7 @@ export function parseErrorMessage(
 		};
 	}
 
-	if (
-		lower.includes("could not find service") ||
-		lower.includes("no such service")
-	) {
+	if (lower.includes("could not find service") || lower.includes("no such service")) {
 		return {
 			message: "Service not found or not loaded",
 			requiresRoot: false,
@@ -47,10 +38,7 @@ export function parseErrorMessage(
 		};
 	}
 
-	if (
-		lower.includes("already running") ||
-		lower.includes("already bootstrapped")
-	) {
+	if (lower.includes("already running") || lower.includes("already bootstrapped")) {
 		return {
 			message: "Service is already running",
 			requiresRoot: false,
@@ -66,10 +54,7 @@ export function parseErrorMessage(
 		};
 	}
 
-	if (
-		lower.includes("could not bootstrap") ||
-		lower.includes("bootstrap failed")
-	) {
+	if (lower.includes("could not bootstrap") || lower.includes("bootstrap failed")) {
 		return {
 			message: "Failed to bootstrap service - check plist configuration",
 			requiresRoot: false,

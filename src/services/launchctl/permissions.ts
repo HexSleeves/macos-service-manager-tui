@@ -16,18 +16,11 @@ export function isAppleService(label: string, plistPath?: string): boolean {
 /**
  * Determine protection status
  */
-export function getProtectionStatus(
-	label: string,
-	plistPath?: string,
-): ProtectionStatus {
+export function getProtectionStatus(label: string, plistPath?: string): ProtectionStatus {
 	if (plistPath?.startsWith("/System/")) return "sip-protected";
 	if (label.startsWith("com.apple.")) return "system-owned";
 
-	const immutableServices = [
-		"com.apple.SystemConfiguration",
-		"com.apple.launchd",
-		"com.apple.kextd",
-	];
+	const immutableServices = ["com.apple.SystemConfiguration", "com.apple.launchd", "com.apple.kextd"];
 	if (immutableServices.some((s) => label.startsWith(s))) return "immutable";
 
 	return "normal";
@@ -57,10 +50,7 @@ export function getCurrentUid(): number {
  * /Library/LaunchDaemons             | system  | YES
  * /System/Library/*                  | system  | SIP protected
  */
-export function requiresRoot(
-	domain: ServiceDomain,
-	plistPath?: string,
-): boolean {
+export function requiresRoot(domain: ServiceDomain, plistPath?: string): boolean {
 	if (plistPath) {
 		const homePath = process.env.HOME;
 		if (homePath && plistPath.startsWith(`${homePath}/Library/LaunchAgents`)) {

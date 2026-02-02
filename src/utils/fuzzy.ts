@@ -144,14 +144,7 @@ function fuzzyMatchRecursive(
 
 		// Recurse for rest of pattern
 		const newMatchedIndices = [...matchedIndices, i];
-		const restMatch = fuzzyMatchRecursive(
-			pattern,
-			target,
-			patternIdx + 1,
-			i + 1,
-			newMatchedIndices,
-			memo,
-		);
+		const restMatch = fuzzyMatchRecursive(pattern, target, patternIdx + 1, i + 1, newMatchedIndices, memo);
 
 		if (restMatch.matched) {
 			const totalScore = positionScore + restMatch.score;
@@ -260,9 +253,7 @@ export function fuzzyMatchService(
 
 	// Match against displayName
 	const displayMatch = fuzzyMatch(pattern, service.displayName);
-	const displayScore = displayMatch.matched
-		? displayMatch.score * 1.2
-		: -Infinity;
+	const displayScore = displayMatch.matched ? displayMatch.score * 1.2 : -Infinity;
 
 	// Match against description (lower weight)
 	const descMatch = service.description
@@ -271,11 +262,7 @@ export function fuzzyMatchService(
 	const descScore = descMatch.matched ? descMatch.score * 0.8 : -Infinity;
 
 	// Return best match
-	if (
-		labelScore >= displayScore &&
-		labelScore >= descScore &&
-		labelMatch.matched
-	) {
+	if (labelScore >= displayScore && labelScore >= descScore && labelMatch.matched) {
 		return {
 			matched: true,
 			score: labelScore,

@@ -3,19 +3,9 @@
  * Combines launchctl and systemextensionsctl services
  */
 
-import type {
-	ActionResult,
-	FilterOptions,
-	Service,
-	ServiceAction,
-	SortField,
-	SortOptions,
-} from "../types";
+import type { ActionResult, FilterOptions, Service, ServiceAction, SortField, SortOptions } from "../types";
 import { fuzzyMatchService } from "../utils/fuzzy";
-import {
-	executeServiceAction,
-	listServices as listLaunchServices,
-} from "./launchctl/index";
+import { executeServiceAction, listServices as listLaunchServices } from "./launchctl/index";
 import { getMockServices } from "./mock";
 import { listSystemExtensions } from "./systemextensions";
 
@@ -51,8 +41,7 @@ export async function fetchAllServices(): Promise<Service[]> {
 		}
 
 		// Combine services (system extensions may have failed, that's OK)
-		const extensions =
-			systemExtensions.status === "fulfilled" ? systemExtensions.value : [];
+		const extensions = systemExtensions.status === "fulfilled" ? systemExtensions.value : [];
 
 		const allServices = [...launchServices.value, ...extensions];
 
@@ -60,9 +49,7 @@ export async function fetchAllServices(): Promise<Service[]> {
 		return allServices.sort((a, b) => a.label.localeCompare(b.label));
 	} catch (error) {
 		// Re-throw with context
-		throw new Error(
-			`Failed to fetch services: ${error instanceof Error ? error.message : String(error)}`,
-		);
+		throw new Error(`Failed to fetch services: ${error instanceof Error ? error.message : String(error)}`);
 	}
 }
 
@@ -83,11 +70,7 @@ export interface FilteredService {
  * Filter services based on filter options with fuzzy search
  * Returns services sorted by match score when a search query is present
  */
-export function filterServices(
-	services: Service[],
-	filter: FilterOptions,
-	searchQuery: string,
-): Service[] {
+export function filterServices(services: Service[], filter: FilterOptions, searchQuery: string): Service[] {
 	const results = filterServicesWithScores(services, filter, searchQuery);
 	return results.map((r) => r.service);
 }
@@ -163,10 +146,7 @@ export function filterServicesWithScores(
 /**
  * Sort services based on sort options
  */
-export function sortServices(
-	services: Service[],
-	sort: SortOptions,
-): Service[] {
+export function sortServices(services: Service[], sort: SortOptions): Service[] {
 	const sorted = [...services];
 
 	sorted.sort((a, b) => {
@@ -243,8 +223,7 @@ export async function performServiceAction(
 		return {
 			success: false,
 			message: "System extensions cannot be controlled directly",
-			error:
-				"Use System Preferences or the parent application to manage system extensions",
+			error: "Use System Preferences or the parent application to manage system extensions",
 		};
 	}
 

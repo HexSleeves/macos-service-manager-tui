@@ -3,18 +3,12 @@
  */
 
 import { spawn } from "bun";
-import {
-	isTransientError,
-	type RetryOptions,
-	withRetry,
-} from "../../utils/retry";
+import { isTransientError, type RetryOptions, withRetry } from "../../utils/retry";
 import type { CommandResult, CommandResultWithRetry } from "./types";
 import { DEFAULT_TIMEOUT_MS } from "./types";
 
 /** Retry callback for logging */
-let retryLogger:
-	| ((attempt: number, error: Error, delayMs: number) => void)
-	| null = null;
+let retryLogger: ((attempt: number, error: Error, delayMs: number) => void) | null = null;
 
 /**
  * Set a callback to be called when retries occur
@@ -46,11 +40,7 @@ async function execCommandOnce(
 	});
 
 	const [stdout, stderr, exitCode] = await Promise.race([
-		Promise.all([
-			new Response(proc.stdout).text(),
-			new Response(proc.stderr).text(),
-			proc.exited,
-		]),
+		Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]),
 		timeoutPromise,
 	]);
 
@@ -99,10 +89,7 @@ export async function execCommandWithRetry(
 			const cmdResult = await execCommandOnce(command, args, timeoutMs);
 
 			if (cmdResult.exitCode !== 0 && isTransientError(cmdResult.stderr)) {
-				throw new Error(
-					cmdResult.stderr ||
-						`Command failed with exit code ${cmdResult.exitCode}`,
-				);
+				throw new Error(cmdResult.stderr || `Command failed with exit code ${cmdResult.exitCode}`);
 			}
 
 			return cmdResult;

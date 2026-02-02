@@ -17,8 +17,7 @@ export function getMockServices(): Service[] {
 			status: "running",
 			pid: 1,
 			protection: "immutable",
-			plistPath:
-				"/System/Library/LaunchDaemons/com.apple.launchd.peruser.plist",
+			plistPath: "/System/Library/LaunchDaemons/com.apple.launchd.peruser.plist",
 			enabled: true,
 			isAppleService: true,
 			requiresRoot: true,
@@ -186,8 +185,7 @@ export function getMockServices(): Service[] {
 			status: "running",
 			pid: 789,
 			protection: "system-owned",
-			plistPath:
-				"/System/Library/LaunchAgents/com.apple.notificationcenterui.plist",
+			plistPath: "/System/Library/LaunchAgents/com.apple.notificationcenterui.plist",
 			description: "Notification Center",
 			enabled: true,
 			isAppleService: true,
@@ -277,8 +275,7 @@ export function getMockServices(): Service[] {
 			domain: "user",
 			status: "disabled",
 			protection: "normal",
-			plistPath:
-				"~/Library/LaunchAgents/com.dropbox.DropboxMacUpdate.agent.plist",
+			plistPath: "~/Library/LaunchAgents/com.dropbox.DropboxMacUpdate.agent.plist",
 			description: "Dropbox Update Service",
 			enabled: false,
 			isAppleService: false,

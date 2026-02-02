@@ -114,10 +114,7 @@ export function parseSystemExtensionsList(output: string): SystemExtension[] {
 /**
  * Compare status "activity" levels - returns true if newStatus is more active
  */
-function isMoreActiveStatus(
-	newStatus: ServiceStatus,
-	oldStatus: ServiceStatus,
-): boolean {
+function isMoreActiveStatus(newStatus: ServiceStatus, oldStatus: ServiceStatus): boolean {
 	const priority: Record<ServiceStatus, number> = {
 		running: 5,
 		stopped: 4,
@@ -181,8 +178,7 @@ export async function uninstallSystemExtension(
 	// their parent application or System Preferences
 	return {
 		success: false,
-		message:
-			"System extensions should be uninstalled through System Preferences or the parent application",
+		message: "System extensions should be uninstalled through System Preferences or the parent application",
 		error: "Manual uninstallation not recommended",
 	};
 }

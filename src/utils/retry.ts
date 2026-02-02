@@ -134,13 +134,7 @@ export async function withRetry<T>(
 	options: RetryOptions = {},
 ): Promise<RetryResult<T>> {
 	const opts = { ...DEFAULT_OPTIONS, ...options };
-	const {
-		maxRetries,
-		initialDelayMs,
-		exponentialBackoff,
-		maxDelayMs,
-		onRetry,
-	} = opts;
+	const { maxRetries, initialDelayMs, exponentialBackoff, maxDelayMs, onRetry } = opts;
 
 	let lastError: Error | null = null;
 	const retryErrors: string[] = [];
@@ -172,12 +166,7 @@ export async function withRetry<T>(
 			retryErrors.push(lastError.message);
 
 			// Calculate delay before next attempt
-			const delayMs = calculateDelay(
-				attempt,
-				initialDelayMs,
-				exponentialBackoff,
-				maxDelayMs,
-			);
+			const delayMs = calculateDelay(attempt, initialDelayMs, exponentialBackoff, maxDelayMs);
 
 			// Call retry callback if provided
 			if (onRetry) {
@@ -208,13 +197,7 @@ export async function withRetryResult<T>(
 	options: RetryOptions = {},
 ): Promise<RetryResult<T>> {
 	const opts = { ...DEFAULT_OPTIONS, ...options };
-	const {
-		maxRetries,
-		initialDelayMs,
-		exponentialBackoff,
-		maxDelayMs,
-		onRetry,
-	} = opts;
+	const { maxRetries, initialDelayMs, exponentialBackoff, maxDelayMs, onRetry } = opts;
 
 	let lastResult: T | null = null;
 	const retryErrors: string[] = [];
@@ -238,12 +221,7 @@ export async function withRetryResult<T>(
 			retryErrors.push(`Attempt ${attempt} failed, retrying...`);
 
 			// Calculate delay before next attempt
-			const delayMs = calculateDelay(
-				attempt,
-				initialDelayMs,
-				exponentialBackoff,
-				maxDelayMs,
-			);
+			const delayMs = calculateDelay(attempt, initialDelayMs, exponentialBackoff, maxDelayMs);
 
 			// Call retry callback if provided
 			if (onRetry) {
@@ -261,12 +239,7 @@ export async function withRetryResult<T>(
 				throw err;
 			}
 
-			const delayMs = calculateDelay(
-				attempt,
-				initialDelayMs,
-				exponentialBackoff,
-				maxDelayMs,
-			);
+			const delayMs = calculateDelay(attempt, initialDelayMs, exponentialBackoff, maxDelayMs);
 			if (onRetry) {
 				onRetry(attempt, err, delayMs);
 			}

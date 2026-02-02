@@ -29,18 +29,14 @@ export function Header() {
 
 	const totalCount = state.services.length;
 	const filteredCount = filteredServices.length;
-	const runningCount = filteredServices.filter(
-		(s) => s.status === "running",
-	).length;
+	const runningCount = filteredServices.filter((s) => s.status === "running").length;
 
 	// Format auto-refresh interval for display
 	const autoRefreshSeconds = Math.round(state.autoRefresh.intervalMs / 1000);
 
 	// Offline state
 	const { isOffline, lastSuccessfulRefresh } = state.offline;
-	const lastRefreshText = lastSuccessfulRefresh
-		? formatRelativeTime(lastSuccessfulRefresh)
-		: "never";
+	const lastRefreshText = lastSuccessfulRefresh ? formatRelativeTime(lastSuccessfulRefresh) : "never";
 
 	return (
 		<box
@@ -81,14 +77,10 @@ export function Header() {
 
 			<box flexDirection="row" gap={3}>
 				{/* Show stale data indicator when offline */}
-				{isOffline && (
-					<text fg="#fbbf24">⚠ Stale data (last: {lastRefreshText})</text>
-				)}
+				{isOffline && <text fg="#fbbf24">⚠ Stale data (last: {lastRefreshText})</text>}
 				<text fg="#9ca3af">
 					Services: <span fg="#e5e7eb">{filteredCount}</span>
-					{filteredCount !== totalCount && (
-						<span fg="#6b7280">/{totalCount}</span>
-					)}
+					{filteredCount !== totalCount && <span fg="#6b7280">/{totalCount}</span>}
 				</text>
 				<text fg="#9ca3af">
 					Running: <span fg="#22c55e">{runningCount}</span>

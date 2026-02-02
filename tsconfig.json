@@ -23,6 +23,17 @@
 		// Some stricter flags (disabled by default)
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
-		"noPropertyAccessFromIndexSignature": false
+		"noPropertyAccessFromIndexSignature": false,
+		// Path aliases for cleaner imports
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"],
+			"@/components/*": ["./src/components/*"],
+			"@/services/*": ["./src/services/*"],
+			"@/hooks/*": ["./src/hooks/*"],
+			"@/utils/*": ["./src/utils/*"],
+			"@/types/*": ["./src/types/*"],
+			"@/constants/*": ["./src/constants/*"]
+		}
 	}
 }

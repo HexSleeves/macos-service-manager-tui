@@ -11,10 +11,7 @@ import type { ParsedListEntry } from "./types";
 /** Check if a line is a header line */
 function isHeaderLine(line: string): boolean {
 	const lower = line.toLowerCase();
-	return (
-		lower.includes("pid") &&
-		(lower.includes("status") || lower.includes("label"))
-	);
+	return lower.includes("pid") && (lower.includes("status") || lower.includes("label"));
 }
 
 /** Check if a line is an error/warning message */
@@ -193,9 +190,7 @@ function _getIndentLevel(line: string): number {
 }
 
 /** Parse "key = value" format */
-function parseEqualsFormat(
-	line: string,
-): { key: string; value: string } | null {
+function parseEqualsFormat(line: string): { key: string; value: string } | null {
 	const match = line.match(/^\s*([\w\s-]+)\s*=\s*(.+)$/);
 	if (match?.[1] && match[2]) {
 		return { key: match[1].trim(), value: match[2].trim() };
@@ -265,10 +260,7 @@ export function parseLaunchctlPrint(output: string): Record<string, string> {
 			continue;
 		}
 
-		const parsed =
-			parseEqualsFormat(line) ||
-			parseColonFormat(line) ||
-			parsePlistFormat(line);
+		const parsed = parseEqualsFormat(line) || parseColonFormat(line) || parsePlistFormat(line);
 
 		if (parsed) {
 			const normalizedKey = normalizePrintKey(parsed.key);

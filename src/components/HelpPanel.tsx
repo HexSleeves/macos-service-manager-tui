@@ -28,6 +28,8 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 			{ key: "ESC", description: "Clear/cancel" },
 			{ key: "f", description: "Toggle filters" },
 			{ key: "1-4", description: "Filter by type" },
+			{ key: "[", description: "Cycle domain" },
+			{ key: "]", description: "Cycle status" },
 			{ key: "a", description: "Toggle Apple svcs" },
 			{ key: "p", description: "Toggle protected" },
 		],
@@ -50,7 +52,8 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 		title: "General",
 		shortcuts: [
 			{ key: "R", description: "Refresh list" },
-			{ key: "A", description: "Auto-refresh" },
+			{ key: "Shift+A", description: "Toggle auto-refresh" },
+			{ key: "Shift+D", description: "Toggle dry-run mode" },
 			{ key: "?", description: "Toggle help" },
 			{ key: "q", description: "Quit" },
 		],
@@ -132,11 +135,7 @@ export function HelpPanel() {
 									<strong>{group.title}</strong>
 								</text>
 								{group.shortcuts.map(({ key, description }) => (
-									<box
-										key={`${group.title}-${key}`}
-										flexDirection="row"
-										paddingLeft={2}
-									>
+									<box key={`${group.title}-${key}`} flexDirection="row" paddingLeft={2}>
 										<box width={12}>
 											<text fg="#60a5fa">{key}</text>
 										</box>

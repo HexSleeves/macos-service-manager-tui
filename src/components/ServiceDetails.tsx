@@ -7,15 +7,7 @@ import { useAppState } from "../hooks/useAppState";
 import type { SystemExtension } from "../types";
 import { StatusIndicator } from "./StatusIndicator";
 
-function DetailRow({
-	label,
-	value,
-	color,
-}: {
-	label: string;
-	value?: string | number;
-	color?: string;
-}) {
+function DetailRow({ label, value, color }: { label: string; value?: string | number; color?: string }) {
 	if (value === undefined || value === null) return null;
 
 	return (
@@ -62,14 +54,7 @@ export function ServiceDetails() {
 
 	if (!selectedService) {
 		return (
-			<box
-				width={40}
-				border
-				borderColor="#374151"
-				padding={1}
-				justifyContent="center"
-				alignItems="center"
-			>
+			<box width={40} border borderColor="#374151" padding={1} justifyContent="center" alignItems="center">
 				<text fg="#6b7280">No service selected</text>
 			</box>
 		);
@@ -87,8 +72,7 @@ export function ServiceDetails() {
 	const metadataError = metadataState?.error;
 
 	// Cast for system extension properties
-	const sysExt =
-		service.type === "SystemExtension" ? (service as SystemExtension) : null;
+	const sysExt = service.type === "SystemExtension" ? (service as SystemExtension) : null;
 
 	return (
 		<box
@@ -98,13 +82,9 @@ export function ServiceDetails() {
 			flexDirection="column"
 		>
 			{/* Header */}
-			<box
-				backgroundColor="#1e3a5f"
-				paddingLeft={1}
-				paddingRight={1}
-				height={1}
-			>
+			<box backgroundColor="#1e3a5f" paddingLeft={1} paddingRight={1} height={1}>
 				<text fg="#60a5fa">
+					{state.focusedPanel === "details" && <span fg="#3b82f6">▶ </span>}
 					<strong>Service Details</strong>
 				</text>
 			</box>
@@ -118,10 +98,7 @@ export function ServiceDetails() {
 
 			{/* Status */}
 			<box paddingLeft={1} paddingTop={1}>
-				<StatusIndicator
-					status={service.status}
-					protection={service.protection}
-				/>
+				<StatusIndicator status={service.status} protection={service.protection} />
 			</box>
 
 			{/* Basic info */}
@@ -152,13 +129,7 @@ export function ServiceDetails() {
 				)}
 				<DetailRow label="Plist Path" value={service.plistPath} />
 				<DetailRow label="Description" value={service.description} />
-				{service.lastError && (
-					<DetailRow
-						label="Last Error"
-						value={service.lastError}
-						color="#ef4444"
-					/>
-				)}
+				{service.lastError && <DetailRow label="Last Error" value={service.lastError} color="#ef4444" />}
 
 				{/* System Extension specific */}
 				{sysExt && (
@@ -167,23 +138,14 @@ export function ServiceDetails() {
 						<DetailRow label="Team ID" value={sysExt.teamId} />
 						<DetailRow label="Version" value={sysExt.version} />
 						<DetailRow label="State" value={sysExt.state} />
-						<DetailRow
-							label="Categories"
-							value={sysExt.categories?.join(", ")}
-						/>
+						<DetailRow label="Categories" value={sysExt.categories?.join(", ")} />
 					</>
 				)}
 			</box>
 
 			{/* Protection notice */}
 			{isProtected && (
-				<box
-					marginTop={1}
-					marginLeft={1}
-					marginRight={1}
-					padding={1}
-					backgroundColor="#7f1d1d"
-				>
+				<box marginTop={1} marginLeft={1} marginRight={1} padding={1} backgroundColor="#7f1d1d">
 					<text fg="#fca5a5">
 						⚠{" "}
 						{service.protection === "sip-protected"
@@ -197,65 +159,31 @@ export function ServiceDetails() {
 
 			{/* Root notice */}
 			{service.requiresRoot && !isProtected && (
-				<box
-					marginTop={1}
-					marginLeft={1}
-					marginRight={1}
-					padding={1}
-					backgroundColor="#78350f"
-				>
+				<box marginTop={1} marginLeft={1} marginRight={1} padding={1} backgroundColor="#78350f">
 					<text fg="#fcd34d">🔑 Requires administrator privileges</text>
 				</box>
 			)}
 
 			{/* Offline notice */}
 			{isOffline && !isSystemExt && (
-				<box
-					marginTop={1}
-					marginLeft={1}
-					marginRight={1}
-					padding={1}
-					backgroundColor="#374151"
-				>
+				<box marginTop={1} marginLeft={1} marginRight={1} padding={1} backgroundColor="#374151">
 					<text fg="#9ca3af">⚡ Actions unavailable - offline mode</text>
 				</box>
 			)}
 
 			{/* Actions */}
 			{!isSystemExt && (
-				<box
-					flexDirection="column"
-					gap={1}
-					paddingTop={1}
-					paddingLeft={1}
-					paddingBottom={1}
-				>
+				<box flexDirection="column" gap={1} paddingTop={1} paddingLeft={1} paddingBottom={1}>
 					<text fg="#9ca3af">Actions:</text>
 					<box flexDirection="row" flexWrap="wrap" gap={1}>
 						{!isRunning && (
-							<ActionButton
-								label="Start"
-								shortcut="↵"
-								disabled={isProtected}
-								offline={isOffline}
-							/>
+							<ActionButton label="Start" shortcut="Enter" disabled={isProtected} offline={isOffline} />
 						)}
 						{isRunning && (
-							<ActionButton
-								label="Stop"
-								shortcut="x"
-								disabled={isProtected}
-								offline={isOffline}
-								warning
-							/>
+							<ActionButton label="Stop" shortcut="x" disabled={isProtected} offline={isOffline} warning />
 						)}
 						{isRunning && (
-							<ActionButton
-								label="Reload"
-								shortcut="r"
-								disabled={isProtected}
-								offline={isOffline}
-							/>
+							<ActionButton label="Reload" shortcut="r" disabled={isProtected} offline={isOffline} />
 						)}
 						<ActionButton
 							label={service.enabled ? "Disable" : "Enable"}
@@ -263,13 +191,7 @@ export function ServiceDetails() {
 							disabled={isProtected}
 							offline={isOffline}
 						/>
-						<ActionButton
-							label="Unload"
-							shortcut="u"
-							disabled={isProtected}
-							offline={isOffline}
-							warning
-						/>
+						<ActionButton label="Unload" shortcut="u" disabled={isProtected} offline={isOffline} warning />
 					</box>
 				</box>
 			)}
@@ -277,8 +199,7 @@ export function ServiceDetails() {
 			{isSystemExt && (
 				<box padding={1}>
 					<text fg="#6b7280">
-						System extensions are managed through System Preferences or the
-						parent application.
+						System extensions are managed through System Preferences or the parent application.
 					</text>
 				</box>
 			)}

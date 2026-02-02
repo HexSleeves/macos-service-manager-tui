@@ -126,9 +126,7 @@ describe("parseLaunchctlList", () => {
 describe("parseLaunchctlPrint", () => {
 	it("parses modern format with braces", () => {
 		const result = parseLaunchctlPrint(PRINT_MODERN);
-		expect(result.path).toBe(
-			"/Library/LaunchDaemons/com.example.myservice.plist",
-		);
+		expect(result.path).toBe("/Library/LaunchDaemons/com.example.myservice.plist");
 		expect(result.state).toBe("running");
 		expect(result.program).toBe("/usr/local/bin/myservice");
 		expect(result.pid).toBe("1234");
@@ -154,9 +152,7 @@ describe("parseLaunchctlPrint", () => {
 
 	it("parses Ventura format with additional fields", () => {
 		const result = parseLaunchctlPrint(PRINT_VENTURA);
-		expect(result.path).toBe(
-			"/System/Library/LaunchAgents/com.apple.sharingd.plist",
-		);
+		expect(result.path).toBe("/System/Library/LaunchAgents/com.apple.sharingd.plist");
 		expect(result.pid).toBe("456");
 		expect(result.enabled).toBe("true");
 		expect(result.run_state).toBe("running");
@@ -187,9 +183,7 @@ describe("parseLaunchctlPrint", () => {
 
 	it("parses nested structures (extracts top-level only)", () => {
 		const result = parseLaunchctlPrint(PRINT_NESTED);
-		expect(result.path).toBe(
-			"/System/Library/LaunchDaemons/com.apple.complex.plist",
-		);
+		expect(result.path).toBe("/System/Library/LaunchDaemons/com.apple.complex.plist");
 		expect(result.state).toBe("running");
 		expect(result.pid).toBe("111");
 	});
@@ -206,17 +200,13 @@ describe("parseLaunchctlPrint", () => {
 
 	it("filters out warning messages", () => {
 		const result = parseLaunchctlPrint(PRINT_PARTIAL_ERROR);
-		expect(result.path).toBe(
-			"/Library/LaunchDaemons/com.example.partial.plist",
-		);
+		expect(result.path).toBe("/Library/LaunchDaemons/com.example.partial.plist");
 		expect(result.state).toBe("running");
 	});
 
 	it("parses Sequoia colon-separated format", () => {
 		const result = parseLaunchctlPrint(PRINT_SEQUOIA);
-		expect(result.path).toBe(
-			"/Library/LaunchDaemons/com.example.sequoia.plist",
-		);
+		expect(result.path).toBe("/Library/LaunchDaemons/com.example.sequoia.plist");
 		expect(result.state).toBe("running");
 		expect(result.pid).toBe("9999");
 	});

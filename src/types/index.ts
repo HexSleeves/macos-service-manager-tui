@@ -9,28 +9,13 @@ export type ServiceDomain = "system" | "user" | "gui";
 export type ServiceType = "LaunchDaemon" | "LaunchAgent" | "SystemExtension";
 
 // Service status
-export type ServiceStatus =
-	| "running"
-	| "stopped"
-	| "disabled"
-	| "error"
-	| "unknown";
+export type ServiceStatus = "running" | "stopped" | "disabled" | "error" | "unknown";
 
 // Protection status
-export type ProtectionStatus =
-	| "normal"
-	| "sip-protected"
-	| "system-owned"
-	| "immutable";
+export type ProtectionStatus = "normal" | "sip-protected" | "system-owned" | "immutable";
 
 // Service action types
-export type ServiceAction =
-	| "start"
-	| "stop"
-	| "enable"
-	| "disable"
-	| "unload"
-	| "reload";
+export type ServiceAction = "start" | "stop" | "enable" | "disable" | "unload" | "reload";
 
 // Plist metadata extracted from service plist files
 export interface PlistMetadata {
@@ -76,11 +61,7 @@ export interface Service {
 export interface SystemExtension extends Service {
 	teamId?: string;
 	version?: string;
-	state?:
-		| "activated_enabled"
-		| "activated_waiting"
-		| "uninstalled"
-		| "terminated";
+	state?: "activated_enabled" | "activated_waiting" | "uninstalled" | "terminated";
 	categories?: string[];
 }
 
@@ -230,9 +211,7 @@ export interface AppContextType {
 	serviceMatchInfo: Map<string, ServiceMatchInfo>;
 	selectedService: Service | null;
 	/** Get metadata loading state for a service */
-	getMetadataLoadingState: (
-		serviceId: string,
-	) => ServiceMetadataState | undefined;
+	getMetadataLoadingState: (serviceId: string) => ServiceMetadataState | undefined;
 	executeAction: (
 		action: ServiceAction,
 		service: Service,
