@@ -1,9 +1,14 @@
 /**
  * macOS launchctl command parsing and execution
  * Based on: https://rakhesh.com/mac/macos-launchctl-commands/
+ *
+ * Supports output format variations across macOS versions:
+ * - macOS 10.14 Mojave through macOS 15 Sequoia
+ * - Handles tab-separated, space-separated, and mixed formats
+ * - Normalizes key names across different launchctl versions
  */
 
-import { spawn } from "bun";
+import { spawn, spawnSync } from "bun";
 import type {
 	ActionResult,
 	PlistMetadata,
@@ -278,16 +283,101 @@ export function getProtectionStatus(
 }
 
 /**
- * Determine if root is required for an action
+ * Check if the current process is running as root (uid 0)
+ * Used to skip sudo when already running with elevated privileges
+ */
+export function isRunningAsRoot(): boolean {
+	return process.getuid?.() === 0;
+}
+
+/**
+ * Get the current user's UID
+ * Returns 501 as fallback (typical first user on macOS)
+ */
+export function getCurrentUid(): number {
+	return process.getuid?.() ?? 501;
+}
+
+/**
+ * Sudo Decision Matrix for macOS launchctl operations:
+ *
+ * Location                           | Domain  | Sudo Required?
+ * -----------------------------------|---------|---------------
+ * ~/Library/LaunchAgents             | user    | NO - user owns these
+ * /Library/LaunchAgents              | system  | YES - system-wide, admin required
+ * /Library/LaunchDaemons             | system  | YES - system daemons need root
+ * /System/Library/LaunchAgents       | system  | SIP - usually can't modify anyway
+ * /System/Library/LaunchDaemons      | system  | SIP - usually can't modify anyway
+ *
+ * Action-specific considerations:
+ * - start/stop (kickstart/kill): Needs elevated privileges for system services
+ * - enable/disable: Modifies persistent boot state, same privilege requirements
+ * - unload (bootout): Same as stop
+ * - reload (kickstart -kp): Same as start
+ *
+ * Note: If already running as root, sudo is never needed.
+ */
+
+/**
+ * Determine if root/sudo is required for service operations
+ *
+ * @param domain - The service domain (user/system/gui)
+ * @param plistPath - Optional path to the plist file
+ * @returns true if sudo would be needed (assuming not already root)
  */
 export function requiresRoot(
 	domain: ServiceDomain,
 	plistPath?: string,
 ): boolean {
-	if (domain === "system") return true;
-	if (plistPath?.startsWith("/Library/")) return true;
-	if (plistPath?.startsWith("/System/")) return true;
+	// User agents in ~/Library/LaunchAgents never need sudo
+	// These are owned by the user and operate in user context
+	if (plistPath) {
+		const homePath = process.env.HOME;
+		if (homePath && plistPath.startsWith(`${homePath}/Library/LaunchAgents`)) {
+			return false;
+		}
+		// Also handle ~ shorthand just in case
+		if (plistPath.startsWith("~/Library/LaunchAgents")) {
+			return false;
+		}
+	}
+
+	// System domain always requires elevated privileges
+	// This includes /Library/LaunchDaemons and /Library/LaunchAgents
+	if (domain === "system") {
+		return true;
+	}
+
+	// System-wide locations require root
+	// /Library/* contains system-wide services (not SIP-protected but admin-only)
+	if (plistPath?.startsWith("/Library/")) {
+		return true;
+	}
+
+	// Apple system paths are SIP-protected
+	// Sudo won't help, but we still flag it for informational purposes
+	if (plistPath?.startsWith("/System/")) {
+		return true;
+	}
+
+	// User domain services don't require root
 	return false;
+}
+
+/**
+ * Determine if sudo should actually be used for a command
+ * Takes into account whether we're already running as root
+ *
+ * @param needsRoot - Whether the operation conceptually requires root
+ * @returns true if sudo should be prefixed to the command
+ */
+export function shouldUseSudo(needsRoot: boolean): boolean {
+	// If already running as root, never need sudo
+	if (isRunningAsRoot()) {
+		return false;
+	}
+	// Otherwise, use sudo if the operation requires root
+	return needsRoot;
 }
 
 /**
@@ -581,8 +671,10 @@ export async function executeServiceAction(
 	}
 
 	// Check if we need sudo
-	if (service.requiresRoot) {
-		// Insert sudo at the beginning
+	// Uses shouldUseSudo() which checks:
+	// 1. service.requiresRoot - based on domain and plist location
+	// 2. isRunningAsRoot() - skips sudo if already root
+	if (shouldUseSudo(service.requiresRoot)) {
 		command = ["sudo", ...command];
 	}
 

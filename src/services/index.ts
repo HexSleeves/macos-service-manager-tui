@@ -11,6 +11,7 @@ import type {
 	SortField,
 	SortOptions,
 } from "../types";
+import { fuzzyMatchService } from "../utils/fuzzy";
 import {
 	executeServiceAction,
 	listServices as listLaunchServices,
@@ -48,51 +49,97 @@ export async function fetchAllServices(): Promise<Service[]> {
 }
 
 /**
- * Filter services based on filter options
+ * Result of fuzzy filtering with match metadata
+ */
+export interface FilteredService {
+	service: Service;
+	/** Fuzzy match score (higher is better) */
+	matchScore: number;
+	/** Which field matched (label, displayName, description) */
+	matchField: "label" | "displayName" | "description";
+	/** Indices of matched characters in the matched field */
+	matchedIndices: number[];
+}
+
+/**
+ * Filter services based on filter options with fuzzy search
+ * Returns services sorted by match score when a search query is present
  */
 export function filterServices(
 	services: Service[],
 	filter: FilterOptions,
 	searchQuery: string,
 ): Service[] {
-	return services.filter((service) => {
-		// Search filter
-		if (searchQuery) {
-			const query = searchQuery.toLowerCase();
-			const matchesSearch =
-				service.label.toLowerCase().includes(query) ||
-				service.displayName.toLowerCase().includes(query) ||
-				(service.description?.toLowerCase().includes(query) ?? false);
-			if (!matchesSearch) return false;
-		}
+	const results = filterServicesWithScores(services, filter, searchQuery);
+	return results.map((r) => r.service);
+}
 
+/**
+ * Filter services and return full match metadata
+ * Useful for highlighting matched characters
+ */
+export function filterServicesWithScores(
+	services: Service[],
+	filter: FilterOptions,
+	searchQuery: string,
+): FilteredService[] {
+	const results: FilteredService[] = [];
+
+	for (const service of services) {
 		// Type filter
 		if (filter.type !== "all" && service.type !== filter.type) {
-			return false;
+			continue;
 		}
 
 		// Domain filter
 		if (filter.domain !== "all" && service.domain !== filter.domain) {
-			return false;
+			continue;
 		}
 
 		// Status filter
 		if (filter.status !== "all" && service.status !== filter.status) {
-			return false;
+			continue;
 		}
 
 		// Apple services filter
 		if (!filter.showAppleServices && service.isAppleService) {
-			return false;
+			continue;
 		}
 
 		// Protected services filter
 		if (!filter.showProtected && service.protection !== "normal") {
-			return false;
+			continue;
 		}
 
-		return true;
-	});
+		// Fuzzy search filter
+		if (searchQuery) {
+			const match = fuzzyMatchService(searchQuery, service);
+			if (!match.matched) {
+				continue;
+			}
+			results.push({
+				service,
+				matchScore: match.score,
+				matchField: match.field,
+				matchedIndices: match.matchedIndices,
+			});
+		} else {
+			// No search query - include all with neutral score
+			results.push({
+				service,
+				matchScore: 0,
+				matchField: "label",
+				matchedIndices: [],
+			});
+		}
+	}
+
+	// Sort by match score when searching (best matches first)
+	if (searchQuery) {
+		results.sort((a, b) => b.matchScore - a.matchScore);
+	}
+
+	return results;
 }
 
 /**
@@ -187,7 +234,15 @@ export async function performServiceAction(
 }
 
 // Re-export types and utilities
-export { executeServiceAction, setRetryLogger, getPlistMetadata } from "./launchctl";
+export {
+	executeServiceAction,
+	setRetryLogger,
+	getPlistMetadata,
+	isRunningAsRoot,
+	getCurrentUid,
+	requiresRoot,
+	shouldUseSudo,
+} from "./launchctl";
 export { listSystemExtensions } from "./systemextensions";
 export { readPlist, describePlistConfig } from "./plist";
 export type { PlistData, KeepAliveConfig, CalendarInterval } from "./plist";
