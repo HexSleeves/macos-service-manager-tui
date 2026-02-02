@@ -83,3 +83,4 @@ When making changes:
 3. Test UI changes by running `bun run dev` (uses mock data on non-macOS)
 4. For virtual scrolling changes, test with rapid filter toggling
 5. Keep files under 500 lines; split if larger
+6. **Always commit changes after completing a feature**, then ask the user if they want to push to dev

@@ -77,7 +77,7 @@ export function FilterBar() {
 	const { filter, sort } = state;
 
 	return (
-		<box flexDirection="column" backgroundColor="#1f2937" padding={1} gap={1}>
+		<box flexDirection="column" backgroundColor="#1f2937" paddingTop={1} paddingBottom={1} paddingLeft={2} paddingRight={1} gap={1}>
 			{/* Type filter */}
 			<FilterRow label="Type:">
 				<FilterButton label="All" active={filter.type === "all"} shortcut="1" />
