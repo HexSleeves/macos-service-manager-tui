@@ -2,7 +2,7 @@
 
 ## Project Structure
 
-```
+```bash
 src/
 ├── index.tsx                 # Main entry point
 ├── types/index.ts            # TypeScript type definitions
@@ -54,13 +54,15 @@ Current tests cover launchctl parsing and fuzzy search. Add tests for new parsin
 ## Commit Conventions
 
 Follow conventional commits:
+
 - `feat:` - New features
-- `fix:` - Bug fixes  
+- `fix:` - Bug fixes
 - `refactor:` - Code restructuring
 - `docs:` - Documentation changes
 - `test:` - Test additions/changes
 
 Examples from history:
+
 - `feat: implement real-time status updates with auto-refresh polling`
 - `fix: ghost rows when toggling filters rapidly`
 - `refactor: split launchctl.ts into modular structure`
@@ -75,6 +77,7 @@ Examples from history:
 ## Agent Instructions
 
 When making changes:
+
 1. Run `bun run typecheck` and `bun test` before committing
 2. Run `bun run check` to fix lint/format issues
 3. Test UI changes by running `bun run dev` (uses mock data on non-macOS)

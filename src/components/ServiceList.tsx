@@ -60,7 +60,7 @@ function truncateWithEllipsis(text: string, maxLength: number): string {
 	if (maxLength <= 0) return "";
 	if (text.length <= maxLength) return text;
 	if (maxLength <= 3) return text.substring(0, maxLength);
-	return text.substring(0, maxLength - 1) + "…";
+	return `${text.substring(0, maxLength - 1)}…`;
 }
 
 /**
@@ -107,6 +107,7 @@ function calculateColumnLayout(terminalWidth: number): ColumnLayout {
 }
 
 interface ServiceRowProps {
+	key: string;
 	service: Service;
 	isSelected: boolean;
 	index: number;
@@ -159,14 +160,16 @@ function HighlightedText({
 
 	return (
 		<text>
-			{/* biome-ignore lint/suspicious/noArrayIndexKey: segments are derived from text and don't reorder */}
 			{segments.map((seg, i) =>
 				seg.highlighted ? (
 					<b key={`hl-${i}-${seg.text}`}>
 						<span fg={highlightColor}>{seg.text}</span>
 					</b>
 				) : (
-					<span key={`txt-${i}-${seg.text}`} fg={dimmed ? "#9ca3af" : baseColor}>
+					<span
+						key={`txt-${i}-${seg.text}`}
+						fg={dimmed ? "#9ca3af" : baseColor}
+					>
 						{seg.text}
 					</span>
 				),
@@ -176,6 +179,7 @@ function HighlightedText({
 }
 
 function ServiceRow({
+	key,
 	service,
 	isSelected,
 	index,
@@ -214,6 +218,7 @@ function ServiceRow({
 
 	return (
 		<box
+			key={key}
 			flexDirection="row"
 			backgroundColor={bgColor}
 			paddingLeft={1}
@@ -400,11 +405,10 @@ export function ServiceList() {
 
 			{/* Service rows - virtual scrolling */}
 			{/* Key on container forces re-render when list size changes significantly */}
-			{/* biome-ignore lint/suspicious/noArrayIndexKey: position-based keys required for virtual scrolling */}
-			<box 
+			<box
 				key={`list-container-${filteredServices.length}`}
-				flexDirection="column" 
-				flexGrow={1} 
+				flexDirection="column"
+				flexGrow={1}
 				overflow="hidden"
 			>
 				{Array.from({ length: visibleRows }).map((_, i) => {
@@ -415,6 +419,7 @@ export function ServiceList() {
 						// when list changes because same ID appears at different positions
 						return (
 							<ServiceRow
+								// biome-ignore lint/suspicious/noArrayIndexKey: position-based keys required for virtual scrolling
 								key={`row-${i}`}
 								service={service}
 								isSelected={startIndex + i === state.selectedIndex}
@@ -425,9 +430,11 @@ export function ServiceList() {
 							/>
 						);
 					}
+
 					// Empty row placeholder to fill space and clear old content
 					return (
 						<box
+							// biome-ignore lint/suspicious/noArrayIndexKey: position-based keys required for virtual scrolling
 							key={`empty-${i}`}
 							height={1}
 							backgroundColor={i % 2 === 0 ? "#1f2937" : "#111827"}

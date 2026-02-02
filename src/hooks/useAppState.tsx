@@ -24,7 +24,6 @@ import type {
 	AppAction,
 	AppContextType,
 	AppState,
-	AutoRefreshConfig,
 	OfflineState,
 	Service,
 	ServiceAction,
@@ -63,7 +62,7 @@ function mergeServices(
 ): Service[] | null {
 	// Build a map of new services by id
 	const newServiceMap = new Map(newServices.map((s) => [s.id, s]));
-	const oldServiceMap = new Map(oldServices.map((s) => [s.id, s]));
+	const _oldServiceMap = new Map(oldServices.map((s) => [s.id, s]));
 
 	// Check if the service set has changed
 	const oldIds = new Set(oldServices.map((s) => s.id));
@@ -433,7 +432,7 @@ export function useAppProvider() {
 		try {
 			const services = await fetchAllServices();
 			dispatch({ type: "FETCH_SUCCESS", payload: services });
-		} catch (error) {
+		} catch (_error) {
 			// Still offline, just update loading state
 			dispatch({ type: "SET_LOADING", payload: false });
 		}

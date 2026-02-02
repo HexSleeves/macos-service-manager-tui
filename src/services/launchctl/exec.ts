@@ -3,7 +3,11 @@
  */
 
 import { spawn } from "bun";
-import { isTransientError, type RetryOptions, withRetry } from "../../utils/retry";
+import {
+	isTransientError,
+	type RetryOptions,
+	withRetry,
+} from "../../utils/retry";
 import type { CommandResult, CommandResultWithRetry } from "./types";
 import { DEFAULT_TIMEOUT_MS } from "./types";
 

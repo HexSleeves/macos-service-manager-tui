@@ -15,18 +15,22 @@ import type {
 import { describePlistConfig, readPlist } from "../plist";
 import { parseErrorMessage } from "./errors";
 import { execCommand, execCommandWithRetry, setRetryLogger } from "./exec";
-import { parseLaunchctlList, parseLaunchctlPrint, normalizePrintKey } from "./parsers";
 import {
+	normalizePrintKey,
+	parseLaunchctlList,
+	parseLaunchctlPrint,
+} from "./parsers";
+import {
+	getCurrentUid,
 	getProtectionStatus,
 	getServiceStatus,
 	isAppleService,
+	isRunningAsRoot,
 	requiresRoot,
 	shouldUseSudo,
-	isRunningAsRoot,
-	getCurrentUid,
 } from "./permissions";
-import { PLIST_DIRECTORIES } from "./types";
 import type { MacOSVersion, ParsedListEntry } from "./types";
+import { PLIST_DIRECTORIES } from "./types";
 import { isValidServiceLabel, validateLabel } from "./validation";
 import { getMacOSVersion } from "./version";
 
@@ -199,7 +203,10 @@ export async function getServiceInfo(
 ): Promise<Service | null> {
 	const target =
 		domain === "system" ? "system" : `user/${process.getuid?.() || 501}`;
-	const result = await execCommand("launchctl", ["print", `${target}/${label}`]);
+	const result = await execCommand("launchctl", [
+		"print",
+		`${target}/${label}`,
+	]);
 
 	if (result.exitCode !== 0) return null;
 

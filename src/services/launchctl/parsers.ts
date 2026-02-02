@@ -181,7 +181,7 @@ export function normalizePrintKey(key: string): string {
 }
 
 /** Get indentation level */
-function getIndentLevel(line: string): number {
+function _getIndentLevel(line: string): number {
 	const match = line.match(/^(\s*)/);
 	if (!match?.[1]) return 0;
 	let level = 0;
@@ -193,7 +193,9 @@ function getIndentLevel(line: string): number {
 }
 
 /** Parse "key = value" format */
-function parseEqualsFormat(line: string): { key: string; value: string } | null {
+function parseEqualsFormat(
+	line: string,
+): { key: string; value: string } | null {
 	const match = line.match(/^\s*([\w\s-]+)\s*=\s*(.+)$/);
 	if (match?.[1] && match[2]) {
 		return { key: match[1].trim(), value: match[2].trim() };

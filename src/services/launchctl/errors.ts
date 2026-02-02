@@ -11,7 +11,10 @@ export interface ParsedError {
 /**
  * Parse launchctl error messages into user-friendly format
  */
-export function parseErrorMessage(stderr: string, exitCode: number): ParsedError {
+export function parseErrorMessage(
+	stderr: string,
+	exitCode: number,
+): ParsedError {
 	const lower = stderr.toLowerCase();
 
 	if (

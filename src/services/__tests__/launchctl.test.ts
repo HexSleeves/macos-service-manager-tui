@@ -9,7 +9,6 @@ import {
 	getMacOSVersion,
 	normalizePrintKey,
 } from "../launchctl/index";
-import type { MacOSVersion } from "../launchctl/types";
 import {
 	LIST_STANDARD,
 	LIST_EXTRA_WHITESPACE,

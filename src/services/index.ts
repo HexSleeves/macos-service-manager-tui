@@ -236,17 +236,17 @@ export async function performServiceAction(
 // Re-export types and utilities
 export {
 	executeServiceAction,
-	setRetryLogger,
+	getCurrentUid,
+	getMacOSVersion,
 	getPlistMetadata,
 	isRunningAsRoot,
-	getCurrentUid,
-	requiresRoot,
-	shouldUseSudo,
 	isValidServiceLabel,
-	getMacOSVersion,
 	parseLaunchctlList,
 	parseLaunchctlPrint,
+	requiresRoot,
+	setRetryLogger,
+	shouldUseSudo,
 } from "./launchctl/index";
+export type { CalendarInterval, KeepAliveConfig, PlistData } from "./plist";
+export { describePlistConfig, readPlist } from "./plist";
 export { listSystemExtensions } from "./systemextensions";
-export { readPlist, describePlistConfig } from "./plist";
-export type { PlistData, KeepAliveConfig, CalendarInterval } from "./plist";

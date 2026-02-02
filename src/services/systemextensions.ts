@@ -114,7 +114,10 @@ export function parseSystemExtensionsList(output: string): SystemExtension[] {
 /**
  * Compare status "activity" levels - returns true if newStatus is more active
  */
-function isMoreActiveStatus(newStatus: ServiceStatus, oldStatus: ServiceStatus): boolean {
+function isMoreActiveStatus(
+	newStatus: ServiceStatus,
+	oldStatus: ServiceStatus,
+): boolean {
 	const priority: Record<ServiceStatus, number> = {
 		running: 5,
 		stopped: 4,

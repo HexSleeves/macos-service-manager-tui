@@ -55,7 +55,7 @@ function isCamelCaseBoundary(str: string, index: number): boolean {
 /**
  * Find all occurrences of a character in a string (case-insensitive)
  */
-function findAllOccurrences(str: string, char: string): number[] {
+function _findAllOccurrences(str: string, char: string): number[] {
 	const indices: number[] = [];
 	const lowerStr = str.toLowerCase();
 	const lowerChar = char.toLowerCase();

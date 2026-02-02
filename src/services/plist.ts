@@ -197,13 +197,13 @@ function parseValue(content: string): unknown {
 
 	// Integer
 	const intMatch = trimmed.match(/^<integer>([^<]+)<\/integer>/);
-	if (intMatch && intMatch[1]) {
+	if (intMatch?.[1]) {
 		return parseInt(intMatch[1], 10);
 	}
 
 	// Real/float
 	const realMatch = trimmed.match(/^<real>([^<]+)<\/real>/);
-	if (realMatch && realMatch[1]) {
+	if (realMatch?.[1]) {
 		return parseFloat(realMatch[1]);
 	}
 
@@ -247,7 +247,7 @@ function parseValue(content: string): unknown {
 
 	// Date
 	const dateMatch = trimmed.match(/^<date>([^<]+)<\/date>/);
-	if (dateMatch && dateMatch[1]) {
+	if (dateMatch?.[1]) {
 		return dateMatch[1];
 	}
 

@@ -4,7 +4,7 @@
 
 A Terminal User Interface (TUI) for managing macOS system services (LaunchDaemons, LaunchAgents, and System Extensions). Built with [OpenTUI](https://github.com/anomalyco/opentui) React renderer and TypeScript.
 
-**Repository**: https://github.com/HexSleeves/macos-service-manager-tui
+**Repository**: <https://github.com/HexSleeves/macos-service-manager-tui>
 
 ## Tech Stack
 
@@ -16,7 +16,7 @@ A Terminal User Interface (TUI) for managing macOS system services (LaunchDaemon
 
 ## Project Structure
 
-```
+```bash
 macos-service-manager/
 ├── src/
 │   ├── index.tsx              # Main entry point, keyboard handling
@@ -92,7 +92,7 @@ launchctl list
 ### Service Types
 
 | Type | Description | Location |
-|------|-------------|----------|
+| ---- | ----------- | -------- |
 | LaunchDaemon | System-level services | /Library/LaunchDaemons, /System/Library/LaunchDaemons |
 | LaunchAgent | User-level services | ~/Library/LaunchAgents, /Library/LaunchAgents |
 | SystemExtension | Kernel extension replacements | Managed via systemextensionsctl |
@@ -100,7 +100,7 @@ launchctl list
 ### Protection Levels
 
 | Level | Symbol | Description |
-|-------|--------|-------------|
+| ----- | ------ | ----------- |
 | normal | (none) | Can be modified |
 | system-owned | ⚙ | Apple service, may have restrictions |
 | sip-protected | 🔒 | Protected by System Integrity Protection |
@@ -113,6 +113,7 @@ type ServiceAction = 'start' | 'stop' | 'enable' | 'disable' | 'unload' | 'reloa
 ```
 
 Mapped to launchctl commands:
+
 - `start` → `launchctl kickstart -k <target>`
 - `stop` → `launchctl kill SIGTERM <target>`
 - `enable` → `launchctl enable <target>`
@@ -122,7 +123,7 @@ Mapped to launchctl commands:
 
 ## UI Layout
 
-```
+```bash
 ┌─────────────────────────────────────────────────────────────┐
 │ ⚙ macOS Service Manager          Services: 23  Running: 17 │ <- Header (3 rows)
 ├─────────────────────────────────────────────────────────────┤
@@ -146,13 +147,15 @@ Mapped to launchctl commands:
 ## Keyboard Shortcuts
 
 ### Navigation
+
 - `↑/k` - Move up
-- `↓/j` - Move down  
+- `↓/j` - Move down
 - `g` - Go to first
 - `G` - Go to last
 - `Tab` - Switch panel focus
 
 ### Search & Filter
+
 - `/` - Focus search
 - `Esc` - Clear search / Cancel
 - `f` - Toggle filter bar
@@ -161,10 +164,12 @@ Mapped to launchctl commands:
 - `p` - Toggle protected services visibility
 
 ### Sorting
+
 - `s` - Cycle sort field (label/status/type/domain/pid)
 - `S` - Toggle sort direction
 
 ### Actions
+
 - `Enter` - Start service (if stopped)
 - `x` - Stop service
 - `r` - Reload service
@@ -173,6 +178,7 @@ Mapped to launchctl commands:
 - `R` - Refresh service list
 
 ### General
+
 - `?` - Toggle help panel
 - `q` / `Ctrl+C` - Quit
 
@@ -239,6 +245,7 @@ On non-macOS systems, mock data is automatically used for development/testing.
 ### Key Patterns
 
 1. **Centering modals**: Use full-screen absolute overlay with flexbox
+
    ```tsx
    <box position="absolute" left={0} top={0} right={0} bottom={0}
         justifyContent="center" alignItems="center">
@@ -247,6 +254,7 @@ On non-macOS systems, mock data is automatically used for development/testing.
    ```
 
 2. **Virtual scrolling**: Calculate visible window based on terminal height
+
    ```tsx
    const { height } = useTerminalDimensions();
    const visibleRows = height - FIXED_OVERHEAD;
@@ -254,6 +262,7 @@ On non-macOS systems, mock data is automatically used for development/testing.
    ```
 
 3. **Keyboard handling**: Single handler with state-aware branching
+
    ```tsx
    useKeyboard((key) => {
      if (state.showConfirm) { /* handle confirm dialog */ return; }
