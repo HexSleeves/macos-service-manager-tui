@@ -187,6 +187,7 @@ export interface AppContextType {
 	executeAction: (
 		action: ServiceAction,
 		service: Service,
+		options?: { dryRun?: boolean },
 	) => Promise<ActionResult>;
 	refresh: () => Promise<void>;
 }

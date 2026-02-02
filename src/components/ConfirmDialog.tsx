@@ -53,6 +53,11 @@ export function ConfirmDialog() {
 	const action = state.pendingAction;
 	const service = selectedService;
 	const isDestructive = ["stop", "unload", "disable"].includes(action);
+	const isDryRun = state.dryRun;
+
+	// Determine border color: orange for dry-run, red for destructive, blue otherwise
+	const borderColor = isDryRun ? "#f97316" : isDestructive ? "#ef4444" : "#3b82f6";
+	const titleColor = isDryRun ? "#f97316" : isDestructive ? "#ef4444" : "#60a5fa";
 
 	return (
 		<box
@@ -65,23 +70,31 @@ export function ConfirmDialog() {
 			alignItems="center"
 		>
 			<box
-				width={60}
+				width={70}
 				border
-				borderColor={isDestructive ? "#ef4444" : "#3b82f6"}
+				borderColor={borderColor}
 				backgroundColor="#1f2937"
 				padding={2}
 				flexDirection="column"
 				gap={1}
 			>
-				<text fg={isDestructive ? "#ef4444" : "#60a5fa"}>
-					<strong>⚠ Confirm Action</strong>
+				<text fg={titleColor}>
+					<strong>{isDryRun ? "🔍 DRY RUN - Preview Action" : "⚠ Confirm Action"}</strong>
 				</text>
+
+				{isDryRun && (
+					<box marginTop={1} padding={1} backgroundColor="#78350f">
+						<text fg="#fbbf24">
+							Dry-run mode: This will show the command without executing it
+						</text>
+					</box>
+				)}
 
 				<box marginTop={1}>
 					<text fg="#e5e7eb">
-						Are you sure you want to{" "}
-						<span fg={isDestructive ? "#ef4444" : "#22c55e"}>{action}</span> this
-						service?
+						{isDryRun ? "Preview" : "Are you sure you want to"}{" "}
+						<span fg={isDestructive ? "#ef4444" : "#22c55e"}>{action}</span>
+						{isDryRun ? " for this service:" : " this service?"}
 					</text>
 				</box>
 
@@ -97,7 +110,7 @@ export function ConfirmDialog() {
 					</box>
 				)}
 
-				{isDestructive && (
+				{isDestructive && !isDryRun && (
 					<box marginTop={1}>
 						<text fg="#f87171">
 							This may affect system stability or running applications.
@@ -106,8 +119,8 @@ export function ConfirmDialog() {
 				)}
 
 				<box flexDirection="row" gap={4} marginTop={2} justifyContent="center">
-					<box backgroundColor="#22c55e" paddingLeft={2} paddingRight={2}>
-						<text fg="#ffffff">[Enter] Confirm</text>
+					<box backgroundColor={isDryRun ? "#b45309" : "#22c55e"} paddingLeft={2} paddingRight={2}>
+						<text fg="#ffffff">[Enter] {isDryRun ? "Show Command" : "Confirm"}</text>
 					</box>
 					<box backgroundColor="#374151" paddingLeft={2} paddingRight={2}>
 						<text fg="#ffffff">[ESC] Cancel</text>

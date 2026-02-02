@@ -12,7 +12,7 @@ export function Footer() {
 		{ key: "↑↓/jk", action: "Navigate" },
 		{ key: "/", action: "Search" },
 		{ key: "f", action: "Filter" },
-		{ key: "A", action: state.autoRefresh.enabled ? "Auto ✓" : "Auto" },
+		{ key: "D", action: state.dryRun ? "Dry ✓" : "Dry", highlight: state.dryRun },
 		{ key: "?", action: "Help" },
 		{ key: "q", action: "Quit" },
 	];
@@ -48,12 +48,12 @@ export function Footer() {
 				gap={2}
 				paddingTop={showMessage ? 0 : 1}
 			>
-				{shortcuts.map(({ key, action }) => (
+				{shortcuts.map(({ key, action, highlight }) => (
 					<box key={key} flexDirection="row" gap={1}>
-						<text fg="#60a5fa" bg="#374151">
+						<text fg={highlight ? "#fbbf24" : "#60a5fa"} bg={highlight ? "#78350f" : "#374151"}>
 							{` ${key} `}
 						</text>
-						<text fg="#9ca3af">{action}</text>
+						<text fg={highlight ? "#fbbf24" : "#9ca3af"}>{action}</text>
 					</box>
 				))}
 			</box>

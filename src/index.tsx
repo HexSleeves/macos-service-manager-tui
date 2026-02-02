@@ -54,7 +54,7 @@ function AppContent() {
 			if (key.name === "return" || key.name === "enter") {
 				dispatch({ type: "CONFIRM_ACTION" });
 				if (state.pendingAction && selectedService) {
-					executeAction(state.pendingAction, selectedService);
+					executeAction(state.pendingAction, selectedService, { dryRun: state.dryRun });
 				}
 				return;
 			}
@@ -205,6 +205,12 @@ function AppContent() {
 		// Toggle auto-refresh (Shift+A)
 		if (key.shift && key.name === "a") {
 			dispatch({ type: "TOGGLE_AUTO_REFRESH" });
+			return;
+		}
+
+		// Toggle dry-run mode (Shift+D)
+		if (key.shift && key.name === "d") {
+			dispatch({ type: "TOGGLE_DRY_RUN" });
 			return;
 		}
 		if (key.name === "p") {

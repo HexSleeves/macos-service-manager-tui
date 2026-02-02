@@ -31,6 +31,13 @@ export function Header() {
 				<text fg="#60a5fa">
 					<strong>⚙ macOS Service Manager</strong>
 				</text>
+				{state.dryRun && (
+					<box backgroundColor="#b45309" paddingLeft={1} paddingRight={1}>
+						<text fg="#ffffff">
+							<strong>🔍 DRY RUN</strong>
+						</text>
+					</box>
+				)}
 				{state.loading && <text fg="#fbbf24">Loading...</text>}
 				{state.autoRefresh.enabled && !state.loading && (
 					<text fg="#22c55e">↻ Auto ({autoRefreshSeconds}s)</text>
