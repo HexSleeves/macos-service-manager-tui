@@ -77,7 +77,15 @@ export function FilterBar() {
 	const { filter, sort } = state;
 
 	return (
-		<box flexDirection="column" backgroundColor="#1f2937" paddingTop={1} paddingBottom={1} paddingLeft={2} paddingRight={1} gap={1}>
+		<box
+			flexDirection="column"
+			backgroundColor="#1f2937"
+			paddingTop={1}
+			paddingBottom={1}
+			paddingLeft={2}
+			paddingRight={1}
+			gap={1}
+		>
 			{/* Type filter */}
 			<FilterRow label="Type:">
 				<FilterButton label="All" active={filter.type === "all"} shortcut="1" />
@@ -104,7 +112,7 @@ export function FilterBar() {
 				<FilterButton label="System" active={filter.domain === "system"} />
 				<FilterButton label="User" active={filter.domain === "user"} />
 				<FilterButton label="GUI" active={filter.domain === "gui"} />
-				<text fg="#6b7280"> - Press [[] to cycle</text>
+				<text fg="#6b7280"> - Press [ to cycle</text>
 			</FilterRow>
 
 			{/* Status filter */}
@@ -114,7 +122,7 @@ export function FilterBar() {
 				<FilterButton label="Stopped" active={filter.status === "stopped"} />
 				<FilterButton label="Disabled" active={filter.status === "disabled"} />
 				<FilterButton label="Error" active={filter.status === "error"} />
-				<text fg="#6b7280"> - Press []] to cycle</text>
+				<text fg="#6b7280"> - Press ] to cycle</text>
 			</FilterRow>
 
 			{/* Toggles */}

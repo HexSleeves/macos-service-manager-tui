@@ -1,0 +1,68 @@
+{
+	"version": 1,
+	"hooks": {
+		"sessionStart": [
+			{
+				"command": "./hooks/session-init.sh"
+			}
+		],
+		"sessionEnd": [
+			{
+				"command": "./hooks/audit.sh"
+			}
+		],
+		"beforeShellExecution": [
+			{
+				"command": "./hooks/audit.sh"
+			},
+			{
+				"command": "./hooks/block-git.sh"
+			}
+		],
+		"beforeMCPExecution": [
+			{
+				"command": "./hooks/audit.sh"
+			}
+		],
+		"afterShellExecution": [
+			{
+				"command": "./hooks/audit.sh"
+			}
+		],
+		"afterMCPExecution": [
+			{
+				"command": "./hooks/audit.sh"
+			}
+		],
+		"afterFileEdit": [
+			{
+				"command": "./hooks/audit.sh"
+			}
+		],
+		"beforeSubmitPrompt": [
+			{
+				"command": "./hooks/audit.sh"
+			}
+		],
+		"preCompact": [
+			{
+				"command": "./hooks/audit.sh"
+			}
+		],
+		"stop": [
+			{
+				"command": "./hooks/audit.sh"
+			}
+		],
+		"beforeTabFileRead": [
+			{
+				"command": "./hooks/redact-secrets-tab.sh"
+			}
+		],
+		"afterTabFileEdit": [
+			{
+				"command": "./hooks/format-tab.sh"
+			}
+		]
+	}
+}
