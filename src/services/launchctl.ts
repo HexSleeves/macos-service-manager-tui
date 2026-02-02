@@ -6,12 +6,16 @@
 import { spawn } from "bun";
 import type {
 	ActionResult,
+	PlistMetadata,
 	ProtectionStatus,
+	RetryInfo,
 	Service,
 	ServiceAction,
 	ServiceDomain,
 	ServiceStatus,
 } from "../types";
+import { isTransientError, withRetry, type RetryOptions } from "../utils/retry";
+import { readPlist, describePlistConfig } from "./plist";
 
 /**
  * Validate a service label to prevent command injection
@@ -46,44 +50,139 @@ export const PLIST_DIRECTORIES = {
 /** Default command timeout in milliseconds */
 const DEFAULT_TIMEOUT_MS = 30000;
 
+/** Command result type */
+interface CommandResult {
+	stdout: string;
+	stderr: string;
+	exitCode: number;
+}
+
+/** Command result with retry info */
+interface CommandResultWithRetry extends CommandResult {
+	retryInfo?: RetryInfo;
+}
+
+/** Retry callback for logging */
+let retryLogger: ((attempt: number, error: Error, delayMs: number) => void) | null = null;
+
+/**
+ * Set a callback to be called when retries occur
+ * Useful for logging or UI updates
+ */
+export function setRetryLogger(
+	logger: ((attempt: number, error: Error, delayMs: number) => void) | null,
+): void {
+	retryLogger = logger;
+}
+
+/**
+ * Execute a shell command and return stdout/stderr with timeout (single attempt)
+ */
+async function execCommandOnce(
+	command: string,
+	args: string[],
+	timeoutMs: number = DEFAULT_TIMEOUT_MS,
+): Promise<CommandResult> {
+	const proc = spawn([command, ...args], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+
+	// Create a timeout promise
+	const timeoutPromise = new Promise<never>((_, reject) => {
+		setTimeout(() => {
+			proc.kill();
+			reject(new Error(`Command timed out after ${timeoutMs}ms`));
+		}, timeoutMs);
+	});
+
+	// Race between command completion and timeout
+	const [stdout, stderr, exitCode] = await Promise.race([
+		Promise.all([
+			new Response(proc.stdout).text(),
+			new Response(proc.stderr).text(),
+			proc.exited,
+		]),
+		timeoutPromise,
+	]);
+
+	return { stdout, stderr, exitCode };
+}
+
 /**
  * Execute a shell command and return stdout/stderr with timeout
+ * Does not use retry logic - use execCommandWithRetry for service operations
  */
 async function execCommand(
 	command: string,
 	args: string[],
 	timeoutMs: number = DEFAULT_TIMEOUT_MS,
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+): Promise<CommandResult> {
 	try {
-		const proc = spawn([command, ...args], {
-			stdout: "pipe",
-			stderr: "pipe",
-		});
-
-		// Create a timeout promise
-		const timeoutPromise = new Promise<never>((_, reject) => {
-			setTimeout(() => {
-				proc.kill();
-				reject(new Error(`Command timed out after ${timeoutMs}ms`));
-			}, timeoutMs);
-		});
-
-		// Race between command completion and timeout
-		const [stdout, stderr, exitCode] = await Promise.race([
-			Promise.all([
-				new Response(proc.stdout).text(),
-				new Response(proc.stderr).text(),
-				proc.exited,
-			]),
-			timeoutPromise,
-		]);
-
-		return { stdout, stderr, exitCode };
+		return await execCommandOnce(command, args, timeoutMs);
 	} catch (error) {
 		return {
 			stdout: "",
 			stderr: error instanceof Error ? error.message : "Unknown error",
 			exitCode: 1,
+		};
+	}
+}
+
+/**
+ * Execute a shell command with automatic retry for transient failures
+ */
+async function execCommandWithRetry(
+	command: string,
+	args: string[],
+	timeoutMs: number = DEFAULT_TIMEOUT_MS,
+	retryOptions?: RetryOptions,
+): Promise<CommandResultWithRetry> {
+	const options: RetryOptions = {
+		maxRetries: 3,
+		initialDelayMs: 1000,
+		exponentialBackoff: true,
+		maxDelayMs: 10000,
+		onRetry: retryLogger ?? undefined,
+		...retryOptions,
+	};
+
+	try {
+		const result = await withRetry(
+			async () => {
+				const cmdResult = await execCommandOnce(command, args, timeoutMs);
+				
+				// Check if the error in stderr is transient and should trigger a retry
+				if (cmdResult.exitCode !== 0 && isTransientError(cmdResult.stderr)) {
+					throw new Error(cmdResult.stderr || `Command failed with exit code ${cmdResult.exitCode}`);
+				}
+				
+				return cmdResult;
+			},
+			options,
+		);
+
+		return {
+			...result.value,
+			retryInfo: result.retried
+				? {
+						attempts: result.attempts,
+						retried: result.retried,
+						retryErrors: result.retryErrors,
+					}
+				: undefined,
+		};
+	} catch (error) {
+		// All retries exhausted or permanent error
+		return {
+			stdout: "",
+			stderr: error instanceof Error ? error.message : "Unknown error",
+			exitCode: 1,
+			retryInfo: {
+				attempts: (options.maxRetries ?? 3) + 1,
+				retried: true,
+				retryErrors: [error instanceof Error ? error.message : "Unknown error"],
+			},
 		};
 	}
 }
@@ -224,17 +323,22 @@ export async function listServices(): Promise<Service[]> {
 			const plistPath = await findPlistPath(label);
 			const protection = getProtectionStatus(label, plistPath);
 			const apple = isAppleService(label, plistPath);
-			
+
+			// Read plist metadata
+			const { metadata: plistMetadata, description } =
+				await getPlistMetadata(plistPath);
+
 			// Determine type and domain based on plist path or label
-			const isDaemon = plistPath?.includes("LaunchDaemons") || 
-				label.includes("daemon") || 
-				(!plistPath?.includes("LaunchAgents"));
-			const isSystemLevel = plistPath?.startsWith("/Library/") || 
+			const isDaemon =
+				plistPath?.includes("LaunchDaemons") ||
+				label.includes("daemon") ||
+				!plistPath?.includes("LaunchAgents");
+			const isSystemLevel =
+				plistPath?.startsWith("/Library/") ||
 				plistPath?.startsWith("/System/");
-			
-			const type: "LaunchDaemon" | "LaunchAgent" = isDaemon && isSystemLevel 
-				? "LaunchDaemon" 
-				: "LaunchAgent";
+
+			const type: "LaunchDaemon" | "LaunchAgent" =
+				isDaemon && isSystemLevel ? "LaunchDaemon" : "LaunchAgent";
 			const domain: ServiceDomain = isSystemLevel ? "system" : "user";
 			const needsRoot = requiresRoot(domain, plistPath);
 
@@ -249,9 +353,11 @@ export async function listServices(): Promise<Service[]> {
 				exitStatus,
 				protection,
 				plistPath,
+				description,
 				enabled: true,
 				isAppleService: apple,
 				requiresRoot: needsRoot,
+				plistMetadata,
 			});
 		}
 	}
@@ -284,6 +390,10 @@ export async function getServiceInfo(
 	const apple = isAppleService(label, plistPath);
 	const needsRoot = requiresRoot(domain, plistPath);
 
+	// Read plist metadata
+	const { metadata: plistMetadata, description } =
+		await getPlistMetadata(plistPath);
+
 	const pid = info.pid ? parseInt(info.pid, 10) : undefined;
 	const exitStatus = info.last_exit_status
 		? parseInt(info.last_exit_status, 10)
@@ -301,9 +411,11 @@ export async function getServiceInfo(
 		exitStatus,
 		protection,
 		plistPath,
+		description,
 		enabled,
 		isAppleService: apple,
 		requiresRoot: needsRoot,
+		plistMetadata,
 	};
 }
 
@@ -333,12 +445,77 @@ async function findPlistPath(label: string): Promise<string | undefined> {
 }
 
 /**
+ * Read plist file and extract metadata for a service
+ */
+export async function getPlistMetadata(
+	plistPath: string | undefined,
+): Promise<{ metadata: PlistMetadata | undefined; description: string | undefined }> {
+	if (!plistPath) {
+		return { metadata: undefined, description: undefined };
+	}
+
+	try {
+		const plistData = await readPlist(plistPath);
+		if (!plistData) {
+			return { metadata: undefined, description: undefined };
+		}
+
+		const metadata: PlistMetadata = {
+			program: plistData.program,
+			programArguments: plistData.programArguments,
+			runAtLoad: plistData.runAtLoad,
+			keepAlive:
+				typeof plistData.keepAlive === "boolean"
+					? plistData.keepAlive
+					: plistData.keepAlive
+						? (plistData.keepAlive as Record<string, unknown>)
+						: undefined,
+			workingDirectory: plistData.workingDirectory,
+			environmentVariables: plistData.environmentVariables,
+			standardOutPath: plistData.standardOutPath,
+			standardErrorPath: plistData.standardErrorPath,
+			startInterval: plistData.startInterval,
+			startCalendarInterval: plistData.startCalendarInterval as
+				| Record<string, number>
+				| Record<string, number>[]
+				| undefined,
+			processType: plistData.processType,
+			watchPaths: plistData.watchPaths,
+			queueDirectories: plistData.queueDirectories,
+			hasSockets: plistData.sockets
+				? Object.keys(plistData.sockets).length > 0
+				: false,
+			hasMachServices: plistData.machServices
+				? Object.keys(plistData.machServices).length > 0
+				: false,
+		};
+
+		// Generate a description from the plist config
+		const description = describePlistConfig(plistData);
+
+		return { metadata, description: description || undefined };
+	} catch {
+		return { metadata: undefined, description: undefined };
+	}
+}
+
+/**
  * Execute a service action
  */
+export interface ExecuteServiceActionOptions {
+	dryRun?: boolean;
+}
+
+export interface DryRunResult extends ActionResult {
+	command?: string; // The command that would be executed
+}
+
 export async function executeServiceAction(
 	action: ServiceAction,
 	service: Service,
-): Promise<ActionResult> {
+	options: ExecuteServiceActionOptions = {},
+): Promise<DryRunResult> {
+	const { dryRun = false } = options;
 	// Validate service label to prevent command injection
 	try {
 		validateLabel(service.label);
@@ -409,25 +586,46 @@ export async function executeServiceAction(
 		command = ["sudo", ...command];
 	}
 
-	const [cmd, ...args] = command;
-	const result = await execCommand(cmd as string, args);
+	// Format command for display
+	const commandString = command.join(" ");
 
-	if (result.exitCode === 0) {
+	// In dry-run mode, return the command without executing
+	if (dryRun) {
 		return {
 			success: true,
-			message: `Successfully ${action}ed service: ${service.label}`,
+			message: `[DRY RUN] Would execute: ${commandString}`,
+			command: commandString,
+		};
+	}
+
+	const [cmd, ...args] = command;
+	const result = await execCommandWithRetry(cmd as string, args);
+
+	if (result.exitCode === 0) {
+		const successMessage = result.retryInfo?.retried
+			? `Successfully ${action}ed service: ${service.label} (after ${result.retryInfo.attempts} attempts)`
+			: `Successfully ${action}ed service: ${service.label}`;
+		return {
+			success: true,
+			message: successMessage,
+			retryInfo: result.retryInfo,
 		};
 	}
 	
 	// Parse and categorize error
 	const errorInfo = parseErrorMessage(result.stderr, result.exitCode);
 	
+	const failureMessage = result.retryInfo?.retried
+		? `Failed to ${action} service (after ${result.retryInfo.attempts} attempts)`
+		: `Failed to ${action} service`;
+	
 	return {
 		success: false,
-		message: `Failed to ${action} service`,
+		message: failureMessage,
 		error: errorInfo.message,
 		requiresRoot: errorInfo.requiresRoot && !service.requiresRoot,
 		sipProtected: errorInfo.sipProtected,
+		retryInfo: result.retryInfo,
 	};
 }
 

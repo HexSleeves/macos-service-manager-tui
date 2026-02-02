@@ -144,15 +144,30 @@ export function getNextSortField(current: SortField): SortField {
 	return fields[nextIndex] ?? "label";
 }
 
+export interface PerformServiceActionOptions {
+	dryRun?: boolean;
+}
+
 /**
  * Execute an action on a service
  */
 export async function performServiceAction(
 	action: ServiceAction,
 	service: Service,
-): Promise<ActionResult> {
+	options: PerformServiceActionOptions = {},
+): Promise<ActionResult & { command?: string }> {
+	const { dryRun = false } = options;
+
 	if (!isMacOS()) {
 		// Mock response for development
+		const mockCommand = `launchctl ${action === "start" ? "kickstart -k" : action === "stop" ? "kill SIGTERM" : action} gui/${process.getuid?.() || 501}/${service.label}`;
+		if (dryRun) {
+			return {
+				success: true,
+				message: `[DRY RUN] Would execute: ${mockCommand}`,
+				command: mockCommand,
+			};
+		}
 		return {
 			success: true,
 			message: `[Mock] Would ${action} service: ${service.label}`,
@@ -168,9 +183,11 @@ export async function performServiceAction(
 		};
 	}
 
-	return executeServiceAction(action, service);
+	return executeServiceAction(action, service, { dryRun });
 }
 
-// Re-export types
-export { executeServiceAction } from "./launchctl";
+// Re-export types and utilities
+export { executeServiceAction, setRetryLogger, getPlistMetadata } from "./launchctl";
 export { listSystemExtensions } from "./systemextensions";
+export { readPlist, describePlistConfig } from "./plist";
+export type { PlistData, KeepAliveConfig, CalendarInterval } from "./plist";
