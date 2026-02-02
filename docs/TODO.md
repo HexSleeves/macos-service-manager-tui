@@ -5,14 +5,14 @@
 | Task | Description | Status |
 |------|-------------|--------|
 | Test on actual macOS | Verify launchctl parsing works with real output | ⬚ |
-| Handle launchctl print variations | Different macOS versions have different output formats | ⬚ |
+| Handle launchctl print variations | Different macOS versions have different output formats | ✅ |
 | Implement proper sudo handling | Currently just prefixes command, need proper PTY/password handling | ⬚ |
-| Add service plist reading | Parse plist files for additional metadata | ⬚ |
-| Implement real-time status updates | Poll for PID/status changes periodically | ⬚ |
-| Retry logic | Automatic retry for transient failures | ⬚ |
-| Offline mode | Graceful degradation when commands fail | ⬚ |
-| Audit sudo usage | Ensure we only use sudo when absolutely necessary | ⬚ |
-| Add dry-run mode | Show what would be executed without doing it | ⬚ |
+| Add service plist reading | Parse plist files for additional metadata | ✅ |
+| Implement real-time status updates | Poll for PID/status changes periodically | ✅ |
+| Retry logic | Automatic retry for transient failures | ✅ |
+| Offline mode | Graceful degradation when commands fail | ✅ |
+| Audit sudo usage | Ensure we only use sudo when absolutely necessary | ✅ |
+| Add dry-run mode | Show what would be executed without doing it | ✅ |
 
 ## Medium Priority (Nice to Have)
 
@@ -20,9 +20,9 @@
 | Task | Description | Status |
 |------|-------------|--------|
 | Service log viewer | Show recent logs from `log show --predicate` | ⬚ |
-| Responsive column widths | Adjust list columns based on terminal width | ⬚ |
+| Responsive column widths | Adjust list columns based on terminal width | ✅ |
 | Mouse support | Click to select, scroll wheel | ⬚ |
-| Fuzzy search | Better search matching (fzf-style) | ⬚ |
+| Fuzzy search | Better search matching (fzf-style) | ✅ |
 | Color themes | Light/dark mode, customizable colors | ⬚ |
 | Truncate long labels | With ellipsis and full label on hover/details | ⬚ |
 
