@@ -10,3 +10,10 @@ export {
 	type RetryOptions,
 	type RetryResult,
 } from "./retry";
+
+export {
+	fuzzyMatch,
+	fuzzyMatchService,
+	type FuzzyMatch,
+	type ServiceFuzzyMatch,
+} from "./fuzzy";

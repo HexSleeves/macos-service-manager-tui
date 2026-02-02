@@ -5,7 +5,7 @@
 
 import { useTerminalDimensions } from "@opentui/react";
 import { useAppState } from "../hooks/useAppState";
-import type { Service } from "../types";
+import type { Service, ServiceMatchInfo } from "../types";
 import {
 	getProtectionSymbol,
 	getStatusColor,
@@ -100,9 +100,70 @@ interface ServiceRowProps {
 	isSelected: boolean;
 	index: number;
 	layout: ColumnLayout;
+	matchInfo?: ServiceMatchInfo;
+	hasSearchQuery: boolean;
 }
 
-function ServiceRow({ service, isSelected, index, layout }: ServiceRowProps) {
+/**
+ * Render text with highlighted matched characters
+ */
+function HighlightedText({
+	text,
+	matchedIndices,
+	baseColor,
+	highlightColor,
+	dimmed,
+}: {
+	text: string;
+	matchedIndices: number[];
+	baseColor: string;
+	highlightColor: string;
+	dimmed?: boolean;
+}) {
+	if (matchedIndices.length === 0) {
+		return <text fg={dimmed ? "#9ca3af" : baseColor}>{text}</text>;
+	}
+
+	const matchSet = new Set(matchedIndices);
+	const segments: Array<{ text: string; highlighted: boolean }> = [];
+	let currentSegment = "";
+	let currentHighlighted = false;
+
+	for (let i = 0; i < text.length; i++) {
+		const isHighlighted = matchSet.has(i);
+		if (i === 0) {
+			currentHighlighted = isHighlighted;
+			currentSegment = text[i] ?? "";
+		} else if (isHighlighted === currentHighlighted) {
+			currentSegment += text[i];
+		} else {
+			segments.push({ text: currentSegment, highlighted: currentHighlighted });
+			currentSegment = text[i] ?? "";
+			currentHighlighted = isHighlighted;
+		}
+	}
+	if (currentSegment) {
+		segments.push({ text: currentSegment, highlighted: currentHighlighted });
+	}
+
+	return (
+		<text>
+			{segments.map((seg, i) =>
+				seg.highlighted ? (
+					<b key={i}>
+						<span fg={highlightColor}>{seg.text}</span>
+					</b>
+				) : (
+					<span key={i} fg={dimmed ? "#9ca3af" : baseColor}>
+						{seg.text}
+					</span>
+				),
+			)}
+		</text>
+	);
+}
+
+function ServiceRow({ service, isSelected, index, layout, matchInfo, hasSearchQuery }: ServiceRowProps) {
 	const statusColor = getStatusColor(service.status);
 	const statusSymbol = getStatusSymbol(service.status);
 	const protectionSymbol = getProtectionSymbol(service.protection);
@@ -170,13 +231,25 @@ function ServiceRow({ service, isSelected, index, layout }: ServiceRowProps) {
 
 			{/* Label - width calculated based on terminal size */}
 			<box width={layout.labelWidth}>
-				<text fg={fgColor}>
-					{service.isAppleService ? (
-						<span fg="#9ca3af">{truncatedLabel}</span>
-					) : (
-						truncatedLabel
-					)}
-				</text>
+				{hasSearchQuery && matchInfo && matchInfo.matchField === "label" ? (
+					<HighlightedText
+						text={truncatedLabel}
+						matchedIndices={matchInfo.matchedIndices.filter(
+							(i) => i < truncatedLabel.length,
+						)}
+						baseColor={fgColor}
+						highlightColor={isSelected ? "#fbbf24" : "#22c55e"}
+						dimmed={service.isAppleService}
+					/>
+				) : (
+					<text fg={fgColor}>
+						{service.isAppleService ? (
+							<span fg="#9ca3af">{truncatedLabel}</span>
+						) : (
+							truncatedLabel
+						)}
+					</text>
+				)}
 			</box>
 
 			{/* PID */}
@@ -188,7 +261,7 @@ function ServiceRow({ service, isSelected, index, layout }: ServiceRowProps) {
 }
 
 export function ServiceList() {
-	const { state, filteredServices } = useAppState();
+	const { state, filteredServices, serviceMatchInfo } = useAppState();
 	const { height: terminalHeight, width: terminalWidth } = useTerminalDimensions();
 
 	// Calculate column layout based on terminal width
@@ -315,6 +388,7 @@ export function ServiceList() {
 				{Array.from({ length: visibleRows }).map((_, i) => {
 					const service = visibleServices[i];
 					if (service) {
+						const matchInfo = serviceMatchInfo.get(service.id);
 						return (
 							<ServiceRow
 								key={`row-${i}`}
@@ -322,6 +396,8 @@ export function ServiceList() {
 								isSelected={startIndex + i === state.selectedIndex}
 								index={startIndex + i}
 								layout={layout}
+								matchInfo={matchInfo}
+								hasSearchQuery={!!state.searchQuery}
 							/>
 						);
 					}

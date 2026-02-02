@@ -11,7 +11,8 @@
 		"lint:files": "bunx biome lint --write",
 		"check": "bunx biome check --write",
 		"check:files": "bunx biome check --write",
-		"typecheck": "bunx tsc --noEmit"
+		"typecheck": "bunx tsc --noEmit",
+		"test": "bun test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.13",

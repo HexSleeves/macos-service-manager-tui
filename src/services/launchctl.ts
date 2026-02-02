@@ -192,59 +192,499 @@ async function execCommandWithRetry(
 	}
 }
 
+// ============================================================================
+// macOS Version Detection
+// ============================================================================
+
+/** macOS version information */
+export interface MacOSVersion {
+	/** Major version number (e.g., 14 for Sonoma) */
+	major: number;
+	/** Minor version number */
+	minor: number;
+	/** Patch version number */
+	patch: number;
+	/** Full version string (e.g., "14.2.1") */
+	full: string;
+	/** Marketing name (e.g., "Sonoma") */
+	name: string;
+}
+
+/** Cached macOS version to avoid repeated sw_vers calls */
+let cachedMacOSVersion: MacOSVersion | null = null;
+
 /**
- * Parse the output of `launchctl list` command
- * Format: PID\tStatus\tLabel
+ * Get the macOS version information
+ * Uses sw_vers command and caches the result
  */
-export function parseLaunchctlList(output: string): Array<{
+export function getMacOSVersion(): MacOSVersion {
+	if (cachedMacOSVersion) {
+		return cachedMacOSVersion;
+	}
+
+	let versionString = "10.15.0"; // Default fallback
+
+	try {
+		const result = spawnSync(["sw_vers", "-productVersion"], {
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		if (result.exitCode === 0) {
+			versionString = new TextDecoder().decode(result.stdout).trim();
+		}
+	} catch {
+		// Ignore errors, use fallback
+	}
+
+	const parts = versionString.split(".").map(Number);
+	const major = parts[0] ?? 10;
+	const minor = parts[1] ?? 15;
+	const patch = parts[2] ?? 0;
+
+	// Map major version to marketing name
+	const versionNames: Record<number, string> = {
+		10: minor <= 14 ? "Mojave or earlier" : "Catalina",
+		11: "Big Sur",
+		12: "Monterey",
+		13: "Ventura",
+		14: "Sonoma",
+		15: "Sequoia",
+	};
+
+	cachedMacOSVersion = {
+		major,
+		minor,
+		patch,
+		full: versionString,
+		name: versionNames[major] ?? "Unknown",
+	};
+
+	return cachedMacOSVersion;
+}
+
+// ============================================================================
+// launchctl list parsing
+// ============================================================================
+
+/** Parsed service entry from launchctl list */
+export interface ParsedListEntry {
 	pid: number | undefined;
 	exitStatus: number | undefined;
 	label: string;
-}> {
-	const lines = output.trim().split("\n");
-	const services: Array<{
-		pid: number | undefined;
-		exitStatus: number | undefined;
-		label: string;
-	}> = [];
+}
 
-	// Skip header line
-	for (let i = 1; i < lines.length; i++) {
-		const line = lines[i];
-		if (!line) continue;
-		const trimmedLine = line.trim();
-		if (!trimmedLine) continue;
+/**
+ * Check if a line looks like a header line
+ */
+function isHeaderLine(line: string): boolean {
+	const lower = line.toLowerCase();
+	return (
+		lower.includes("pid") &&
+		(lower.includes("status") || lower.includes("label"))
+	);
+}
 
-		const parts = trimmedLine.split("\t");
-		if (parts.length >= 3) {
-			const pidPart = parts[0];
-			const statusPart = parts[1];
-			const labelPart = parts[2];
-			if (!pidPart || !statusPart || !labelPart) continue;
+/**
+ * Check if a line looks like an error or warning message (not a valid data line)
+ * Must be careful not to match service labels that contain words like "error"
+ */
+function isErrorOrWarningLine(line: string): boolean {
+	const trimmed = line.trim();
+	const lower = trimmed.toLowerCase();
 
-			const pid = pidPart === "-" ? undefined : Number.parseInt(pidPart, 10);
-			const exitStatus =
-				statusPart === "-" ? undefined : Number.parseInt(statusPart, 10);
+	// If line looks like a launchctl list data line (starts with PID or "-"), it's not an error
+	if (/^(-|\d+)\s/.test(trimmed)) {
+		return false;
+	}
 
-			services.push({ pid, exitStatus, label: labelPart });
+	// Common error message patterns that wouldn't appear in data lines
+	return (
+		lower.startsWith("could not") ||
+		lower.startsWith("error:") ||
+		lower.startsWith("warning:") ||
+		lower.startsWith("failed") ||
+		lower.startsWith("unable to") ||
+		lower.includes("permission denied") ||
+		lower.includes("operation not permitted") ||
+		lower.includes("contact daemon") ||
+		lower.includes("no such service") ||
+		lower.includes("service not found")
+	);
+}
+
+/**
+ * Parse a value that might be "-" or a number
+ */
+function parseOptionalNumber(value: string): number | undefined {
+	const trimmed = value.trim();
+	if (trimmed === "-" || trimmed === "") {
+		return undefined;
+	}
+	// Handle hex numbers (e.g., 0x1a2b)
+	if (trimmed.startsWith("0x")) {
+		return Number.parseInt(trimmed, 16);
+	}
+	const num = Number.parseInt(trimmed, 10);
+	return Number.isNaN(num) ? undefined : num;
+}
+
+/**
+ * Try to parse a line using tab separators
+ */
+function parseLineWithTabs(line: string): ParsedListEntry | null {
+	const parts = line.split("\t").map((p) => p.trim());
+	if (parts.length < 3) return null;
+
+	const [pidPart, statusPart, labelPart] = parts;
+	if (!pidPart || !statusPart || !labelPart) return null;
+
+	// Validate that label looks like a service label
+	if (!labelPart.match(/^[a-zA-Z0-9._-]+$/)) return null;
+
+	return {
+		pid: parseOptionalNumber(pidPart),
+		exitStatus: parseOptionalNumber(statusPart),
+		label: labelPart,
+	};
+}
+
+/**
+ * Try to parse a line using space separators (multiple spaces)
+ */
+function parseLineWithSpaces(line: string): ParsedListEntry | null {
+	// Split on multiple whitespace
+	const parts = line.split(/\s+/).filter((p) => p.length > 0);
+	if (parts.length < 3) return null;
+
+	const [pidPart, statusPart, labelPart] = parts;
+	if (!pidPart || !statusPart || !labelPart) return null;
+
+	// Validate that label looks like a service label
+	if (!labelPart.match(/^[a-zA-Z0-9._-]+$/)) return null;
+
+	return {
+		pid: parseOptionalNumber(pidPart),
+		exitStatus: parseOptionalNumber(statusPart),
+		label: labelPart,
+	};
+}
+
+/**
+ * Parse a single line trying multiple strategies
+ */
+function parseListLine(line: string): ParsedListEntry | null {
+	const trimmedLine = line.trim();
+	if (!trimmedLine) return null;
+
+	// Skip header and error lines
+	if (isHeaderLine(trimmedLine)) return null;
+	if (isErrorOrWarningLine(trimmedLine)) return null;
+
+	// Try tab-separated first (most common)
+	const tabResult = parseLineWithTabs(trimmedLine);
+	if (tabResult) return tabResult;
+
+	// Fall back to space-separated
+	const spaceResult = parseLineWithSpaces(trimmedLine);
+	if (spaceResult) return spaceResult;
+
+	return null;
+}
+
+/**
+ * Parse the output of `launchctl list` command
+ *
+ * Handles multiple output format variations:
+ * - Tab-separated (standard): PID\tStatus\tLabel
+ * - Space-separated (legacy/terminal): PID  Status  Label
+ * - Mixed separators
+ * - With or without header line
+ * - With error messages mixed in
+ *
+ * @param output - Raw stdout from launchctl list command
+ * @returns Array of parsed service entries
+ */
+export function parseLaunchctlList(output: string): ParsedListEntry[] {
+	if (!output || output.trim() === "") {
+		return [];
+	}
+
+	const lines = output.split("\n");
+	const services: ParsedListEntry[] = [];
+
+	for (const line of lines) {
+		const parsed = parseListLine(line);
+		if (parsed) {
+			services.push(parsed);
 		}
 	}
 
 	return services;
 }
 
+// ============================================================================
+// launchctl print parsing
+// ============================================================================
+
+/**
+ * Key name normalization map for consistent access across macOS versions
+ * Maps various key formats to a normalized form
+ */
+const KEY_NORMALIZATIONS: Record<string, string> = {
+	// PID variations
+	pid: "pid",
+	"process id": "pid",
+	"process-id": "pid",
+	processid: "pid",
+
+	// Exit status variations
+	"last exit code": "last_exit_code",
+	"last-exit-code": "last_exit_code",
+	lastexitcode: "last_exit_code",
+	"last exit status": "last_exit_status",
+	"last-exit-status": "last_exit_status",
+	lastexitstatus: "last_exit_status",
+	exitstatus: "exit_status",
+	"exit status": "exit_status",
+	"exit-status": "exit_status",
+
+	// State/status variations (normalize 'status' to 'state' for consistency)
+	status: "state",
+	state: "state",
+	"run state": "run_state",
+	"run-state": "run_state",
+	runstate: "run_state",
+
+	// Path variations
+	path: "path",
+	program: "program",
+	executable: "program",
+
+	// Enable variations
+	enabled: "enabled",
+	disabled: "disabled",
+
+	// On-demand variations
+	ondemand: "ondemand",
+	"on demand": "ondemand",
+	"on-demand": "ondemand",
+
+	// Spawn variations
+	"spawn type": "spawn_type",
+	"spawn-type": "spawn_type",
+	spawntype: "spawn_type",
+	"last spawn error": "last_spawn_error",
+	"last-spawn-error": "last_spawn_error",
+	lastspawnerror: "last_spawn_error",
+	"last_spawn_error": "last_spawn_error",
+
+	// Other common keys
+	"active count": "active_count",
+	"active-count": "active_count",
+	activecount: "active_count",
+	runs: "runs",
+	label: "label",
+	priority: "priority",
+	processtype: "processtype",
+	"process type": "processtype",
+	"process-type": "processtype",
+};
+
+/**
+ * Normalize a key name to a consistent format
+ * Handles camelCase, PascalCase, kebab-case, and space-separated keys
+ *
+ * @param key - Raw key name from launchctl output
+ * @returns Normalized key name (lowercase with underscores)
+ */
+export function normalizePrintKey(key: string): string {
+	// First, convert to lowercase and standardize
+	let normalized = key.toLowerCase().trim();
+
+	// Handle camelCase and PascalCase by inserting underscores
+	normalized = normalized
+		.replace(/([a-z])([A-Z])/g, "$1_$2")
+		.toLowerCase();
+
+	// Replace hyphens with underscores
+	normalized = normalized.replace(/-/g, "_");
+
+	// Replace multiple spaces/underscores with single underscore
+	normalized = normalized.replace(/[\s_]+/g, "_");
+
+	// Check if we have a known normalization
+	const lookup = KEY_NORMALIZATIONS[normalized];
+	if (lookup) {
+		return lookup;
+	}
+
+	// Also try the original lowercase key (for keys like "lastExitStatus")
+	const lowerKey = key.toLowerCase().replace(/[\s-]+/g, "");
+	const lowerLookup = KEY_NORMALIZATIONS[lowerKey];
+	if (lowerLookup) {
+		return lowerLookup;
+	}
+
+	return normalized;
+}
+
+/**
+ * Check if a line is inside a nested block (has deeper indentation)
+ * @param line - The line to check
+ * @param baseIndent - The base indentation level of top-level keys
+ */
+function getIndentLevel(line: string): number {
+	const match = line.match(/^(\s*)/);
+	if (!match?.[1]) return 0;
+	// Count tabs as 1 indent level, spaces as 1/4 (approximate)
+	const indent = match[1];
+	let level = 0;
+	for (const char of indent) {
+		if (char === "\t") level += 1;
+		else level += 0.25;
+	}
+	return Math.floor(level);
+}
+
+/**
+ * Parse a line with "key = value" format (modern launchctl print)
+ */
+function parseEqualsFormat(
+	line: string,
+): { key: string; value: string } | null {
+	const match = line.match(/^\s*([\w\s-]+)\s*=\s*(.+)$/);
+	if (match?.[1] && match[2]) {
+		return {
+			key: match[1].trim(),
+			value: match[2].trim(),
+		};
+	}
+	return null;
+}
+
+/**
+ * Parse a line with "key: value" format (potential newer format)
+ */
+function parseColonFormat(line: string): { key: string; value: string } | null {
+	// Avoid matching paths like /usr/bin
+	const match = line.match(/^([a-zA-Z][\w\s-]*):\s+(.+)$/);
+	if (match?.[1] && match[2]) {
+		return {
+			key: match[1].trim(),
+			value: match[2].trim(),
+		};
+	}
+	return null;
+}
+
+/**
+ * Parse legacy plist-style format: "Key" = "Value";
+ */
+function parsePlistFormat(
+	line: string,
+): { key: string; value: string } | null {
+	const match = line.match(/^\s*"([^"]+)"\s*=\s*(.+);\s*$/);
+	if (match?.[1] && match[2]) {
+		let value = match[2].trim();
+		// Remove surrounding quotes if present
+		if (value.startsWith('"') && value.endsWith('"')) {
+			value = value.slice(1, -1);
+		}
+		return {
+			key: match[1].trim(),
+			value,
+		};
+	}
+	return null;
+}
+
 /**
  * Parse `launchctl print` output for detailed service info
+ *
+ * Handles multiple output format variations:
+ * - Modern format: key = value (with braces for nested structures)
+ * - Colon format: key: value (potential newer versions)
+ * - Legacy plist format: "Key" = "Value";
+ * - Various key name conventions across macOS versions
+ *
+ * @param output - Raw stdout from launchctl print command
+ * @returns Object mapping normalized keys to string values
  */
 export function parseLaunchctlPrint(output: string): Record<string, string> {
 	const info: Record<string, string> = {};
+
+	if (!output || output.trim() === "") {
+		return info;
+	}
+
 	const lines = output.split("\n");
 
+	// Track nesting depth to skip nested structures
+	let inNestedBlock = false;
+	let nestedBlockDepth = 0;
+	let baseIndent = -1;
+
 	for (const line of lines) {
-		const match = line.match(/^\s*([\w\s]+)\s*=\s*(.+)$/);
-		if (match?.[1] && match[2]) {
-			const key = match[1].trim().toLowerCase().replace(/\s+/g, "_");
-			info[key] = match[2].trim();
+		// Skip empty lines
+		if (!line.trim()) continue;
+
+		// Skip error/warning lines
+		if (isErrorOrWarningLine(line)) continue;
+
+		// Skip lines that are just opening/closing braces or service names
+		const trimmed = line.trim();
+		if (trimmed === "{" || trimmed === "}") {
+			if (trimmed === "}") {
+				if (nestedBlockDepth > 0) nestedBlockDepth--;
+				if (nestedBlockDepth === 0) inNestedBlock = false;
+			}
+			continue;
+		}
+
+		// Skip service header lines (e.g., "com.example.service = {")
+		if (trimmed.endsWith("= {") || trimmed.endsWith("={")) {
+			continue;
+		}
+
+		// Detect and skip nested blocks (e.g., environment = { ... })
+		if (trimmed.endsWith("{")) {
+			nestedBlockDepth++;
+			inNestedBlock = true;
+			continue;
+		}
+
+		// Skip lines inside nested blocks
+		if (inNestedBlock && nestedBlockDepth > 0) {
+			if (trimmed === "}") {
+				nestedBlockDepth--;
+				if (nestedBlockDepth === 0) inNestedBlock = false;
+			}
+			continue;
+		}
+
+		// Determine base indent from first valid key-value line
+		const currentIndent = getIndentLevel(line);
+		if (baseIndent < 0) {
+			baseIndent = currentIndent;
+		}
+
+		// Try different parsing formats
+		let parsed = parseEqualsFormat(line);
+
+		if (!parsed) {
+			parsed = parseColonFormat(line);
+		}
+
+		if (!parsed) {
+			parsed = parsePlistFormat(line);
+		}
+
+		if (parsed) {
+			const normalizedKey = normalizePrintKey(parsed.key);
+			// Don't overwrite existing values (first occurrence wins)
+			if (!(normalizedKey in info)) {
+				info[normalizedKey] = parsed.value;
+			}
 		}
 	}
 
