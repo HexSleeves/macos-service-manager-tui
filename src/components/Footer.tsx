@@ -12,7 +12,7 @@ export function Footer() {
 		{ key: "↑↓/jk", action: "Navigate" },
 		{ key: "/", action: "Search" },
 		{ key: "f", action: "Filter" },
-		{ key: "a", action: "Apple" },
+		{ key: "A", action: state.autoRefresh.enabled ? "Auto ✓" : "Auto" },
 		{ key: "?", action: "Help" },
 		{ key: "q", action: "Quit" },
 	];

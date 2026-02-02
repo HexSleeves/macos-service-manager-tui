@@ -10,6 +10,7 @@ import {
 	useEffect,
 	useMemo,
 	useReducer,
+	useRef,
 } from "react";
 import {
 	fetchAllServices,
@@ -23,9 +24,63 @@ import type {
 	AppAction,
 	AppContextType,
 	AppState,
+	AutoRefreshConfig,
 	Service,
 	ServiceAction,
 } from "../types";
+
+// Default auto-refresh interval (10 seconds)
+const DEFAULT_AUTO_REFRESH_INTERVAL = 10000;
+
+/**
+ * Check if a service has changed (for smart updates)
+ */
+function hasServiceChanged(oldService: Service, newService: Service): boolean {
+	return (
+		oldService.status !== newService.status ||
+		oldService.pid !== newService.pid ||
+		oldService.enabled !== newService.enabled ||
+		oldService.exitStatus !== newService.exitStatus ||
+		oldService.lastError !== newService.lastError
+	);
+}
+
+/**
+ * Merge services, only updating those that changed
+ * Returns null if nothing changed, otherwise returns the updated array
+ */
+function mergeServices(oldServices: Service[], newServices: Service[]): Service[] | null {
+	// Build a map of new services by id
+	const newServiceMap = new Map(newServices.map(s => [s.id, s]));
+	const oldServiceMap = new Map(oldServices.map(s => [s.id, s]));
+	
+	// Check if the service set has changed
+	const oldIds = new Set(oldServices.map(s => s.id));
+	const newIds = new Set(newServices.map(s => s.id));
+	
+	// Check for added or removed services
+	const hasAddedOrRemoved = 
+		newServices.some(s => !oldIds.has(s.id)) ||
+		oldServices.some(s => !newIds.has(s.id));
+	
+	if (hasAddedOrRemoved) {
+		// Services were added or removed, return new array
+		return newServices;
+	}
+	
+	// Check if any services changed
+	let hasChanges = false;
+	const mergedServices = oldServices.map(oldService => {
+		const newService = newServiceMap.get(oldService.id);
+		if (newService && hasServiceChanged(oldService, newService)) {
+			hasChanges = true;
+			return newService;
+		}
+		return oldService;
+	});
+	
+	return hasChanges ? mergedServices : null;
+}
 
 // Initial state
 const initialState: AppState = {
@@ -52,6 +107,12 @@ const initialState: AppState = {
 	pendingAction: null,
 	lastActionResult: null,
 	executingAction: false,
+	autoRefresh: {
+		enabled: false,
+		intervalMs: DEFAULT_AUTO_REFRESH_INTERVAL,
+	},
+	dryRun: false,
+	dryRunCommand: null,
 };
 
 // Reducer
@@ -147,6 +208,47 @@ function appReducer(state: AppState, action: AppAction): AppState {
 		case "TOGGLE_FILTERS":
 			return { ...state, showFilters: !state.showFilters };
 
+		case "TOGGLE_AUTO_REFRESH":
+			return {
+				...state,
+				autoRefresh: {
+					...state.autoRefresh,
+					enabled: !state.autoRefresh.enabled,
+				},
+			};
+
+		case "SET_AUTO_REFRESH_INTERVAL":
+			return {
+				...state,
+				autoRefresh: {
+					...state.autoRefresh,
+					intervalMs: action.payload,
+				},
+			};
+
+		case "UPDATE_SERVICES": {
+			// Smart update: only update if services actually changed
+			const merged = mergeServices(state.services, action.payload);
+			if (merged === null) {
+				// No changes, return current state to avoid re-renders
+				return state;
+			}
+			return {
+				...state,
+				services: merged,
+				selectedIndex: Math.min(
+					state.selectedIndex,
+					Math.max(0, merged.length - 1),
+				),
+			};
+		}
+
+		case "TOGGLE_DRY_RUN":
+			return { ...state, dryRun: !state.dryRun, dryRunCommand: null };
+
+		case "SET_DRY_RUN_COMMAND":
+			return { ...state, dryRunCommand: action.payload };
+
 		default:
 			return state;
 	}
@@ -172,6 +274,7 @@ interface AppProviderProps {
 // Hook for provider logic (to be used in App component)
 export function useAppProvider() {
 	const [state, dispatch] = useReducer(appReducer, initialState);
+	const autoRefreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	// Filtered and sorted services
 	const filteredServices = useMemo(() => {
@@ -205,16 +308,39 @@ export function useAppProvider() {
 		}
 	}, []);
 
+	// Silent refresh for auto-refresh (doesn't show loading state)
+	const silentRefresh = useCallback(async () => {
+		try {
+			const services = await fetchAllServices();
+			dispatch({ type: "UPDATE_SERVICES", payload: services });
+		} catch (error) {
+			// Silently ignore errors during auto-refresh
+			// to avoid spamming the user with error messages
+		}
+	}, []);
+
 	// Execute action on service
 	const executeAction = useCallback(
-		async (action: ServiceAction, service: Service): Promise<ActionResult> => {
+		async (
+			action: ServiceAction,
+			service: Service,
+			options: { dryRun?: boolean } = {},
+		): Promise<ActionResult> => {
+			const { dryRun = false } = options;
+
 			dispatch({ type: "SET_EXECUTING", payload: true });
 			try {
-				const result = await performServiceAction(action, service);
+				const result = await performServiceAction(action, service, { dryRun });
+
+				// In dry-run mode, store the command and show it
+				if (dryRun && "command" in result) {
+					dispatch({ type: "SET_DRY_RUN_COMMAND", payload: result.command ?? null });
+				}
+
 				dispatch({ type: "SET_ACTION_RESULT", payload: result });
 
-				// Refresh services after action
-				if (result.success) {
+				// Only refresh services after real action (not dry-run)
+				if (result.success && !dryRun) {
 					await refresh();
 				}
 
@@ -230,6 +356,30 @@ export function useAppProvider() {
 	useEffect(() => {
 		refresh();
 	}, [refresh]);
+
+	// Auto-refresh effect
+	useEffect(() => {
+		// Clear any existing interval
+		if (autoRefreshIntervalRef.current) {
+			clearInterval(autoRefreshIntervalRef.current);
+			autoRefreshIntervalRef.current = null;
+		}
+
+		// Set up new interval if auto-refresh is enabled
+		if (state.autoRefresh.enabled) {
+			autoRefreshIntervalRef.current = setInterval(() => {
+				silentRefresh();
+			}, state.autoRefresh.intervalMs);
+		}
+
+		// Cleanup on unmount or when auto-refresh settings change
+		return () => {
+			if (autoRefreshIntervalRef.current) {
+				clearInterval(autoRefreshIntervalRef.current);
+				autoRefreshIntervalRef.current = null;
+			}
+		};
+	}, [state.autoRefresh.enabled, state.autoRefresh.intervalMs, silentRefresh]);
 
 	const contextValue: AppContextType = {
 		state,

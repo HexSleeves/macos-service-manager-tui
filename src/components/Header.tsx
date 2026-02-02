@@ -14,6 +14,9 @@ export function Header() {
 		(s) => s.status === "running",
 	).length;
 
+	// Format auto-refresh interval for display
+	const autoRefreshSeconds = Math.round(state.autoRefresh.intervalMs / 1000);
+
 	return (
 		<box
 			flexDirection="row"
@@ -29,6 +32,9 @@ export function Header() {
 					<strong>⚙ macOS Service Manager</strong>
 				</text>
 				{state.loading && <text fg="#fbbf24">Loading...</text>}
+				{state.autoRefresh.enabled && !state.loading && (
+					<text fg="#22c55e">↻ Auto ({autoRefreshSeconds}s)</text>
+				)}
 			</box>
 
 			<box flexDirection="row" gap={3}>

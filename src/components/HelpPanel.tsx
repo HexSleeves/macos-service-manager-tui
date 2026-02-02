@@ -52,6 +52,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 		title: "General",
 		shortcuts: [
 			{ key: "R", description: "Refresh list" },
+			{ key: "A", description: "Auto-refresh" },
 			{ key: "?", description: "Toggle help" },
 			{ key: "q", description: "Quit" },
 		],

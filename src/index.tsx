@@ -202,6 +202,11 @@ function AppContent() {
 			});
 			return;
 		}
+		// Toggle auto-refresh (Shift+A)
+		if (key.shift && key.name === "a") {
+			dispatch({ type: "TOGGLE_AUTO_REFRESH" });
+			return;
+		}
 		if (key.name === "p") {
 			dispatch({
 				type: "SET_FILTER",
