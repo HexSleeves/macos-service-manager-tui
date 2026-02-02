@@ -1,67 +1,60 @@
 {
 	"version": 1,
 	"hooks": {
-		"sessionStart": [
-			{
-				"command": "./hooks/session-init.sh"
-			}
-		],
 		"sessionEnd": [
 			{
-				"command": "./hooks/audit.sh"
+				"command": ".cursor/hooks/audit.sh"
 			}
 		],
 		"beforeShellExecution": [
 			{
-				"command": "./hooks/audit.sh"
+				"command": ".cursor/hooks/audit.sh"
 			},
 			{
-				"command": "./hooks/block-git.sh"
+				"command": ".cursor/hooks/block-git.sh"
 			}
 		],
 		"beforeMCPExecution": [
 			{
-				"command": "./hooks/audit.sh"
+				"command": ".cursor/hooks/audit.sh"
 			}
 		],
 		"afterShellExecution": [
 			{
-				"command": "./hooks/audit.sh"
+				"command": ".cursor/hooks/audit.sh"
 			}
 		],
 		"afterMCPExecution": [
 			{
-				"command": "./hooks/audit.sh"
+				"command": ".cursor/hooks/audit.sh"
 			}
 		],
 		"afterFileEdit": [
 			{
-				"command": "./hooks/audit.sh"
+				"command": ".cursor/hooks/audit.sh"
+			},
+			{
+				"command": ".cursor/hooks/format.sh"
 			}
 		],
 		"beforeSubmitPrompt": [
 			{
-				"command": "./hooks/audit.sh"
+				"command": ".cursor/hooks/audit.sh"
 			}
 		],
 		"preCompact": [
 			{
-				"command": "./hooks/audit.sh"
+				"command": ".cursor/hooks/audit.sh"
 			}
 		],
 		"stop": [
 			{
-				"command": "./hooks/audit.sh"
-			}
-		],
-		"beforeTabFileRead": [
-			{
-				"command": "./hooks/redact-secrets-tab.sh"
+				"command": ".cursor/hooks/audit.sh"
 			}
 		],
 		"afterTabFileEdit": [
 			{
-				"command": "./hooks/format-tab.sh"
+				"command": ".cursor/hooks/format-tab.sh"
 			}
 		]
 	}
