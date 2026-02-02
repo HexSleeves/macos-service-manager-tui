@@ -159,13 +159,14 @@ function HighlightedText({
 
 	return (
 		<text>
+			{/* biome-ignore lint/suspicious/noArrayIndexKey: segments are derived from text and don't reorder */}
 			{segments.map((seg, i) =>
 				seg.highlighted ? (
-					<b key={i}>
+					<b key={`hl-${i}-${seg.text}`}>
 						<span fg={highlightColor}>{seg.text}</span>
 					</b>
 				) : (
-					<span key={i} fg={dimmed ? "#9ca3af" : baseColor}>
+					<span key={`txt-${i}-${seg.text}`} fg={dimmed ? "#9ca3af" : baseColor}>
 						{seg.text}
 					</span>
 				),
@@ -406,7 +407,7 @@ export function ServiceList() {
 						const matchInfo = serviceMatchInfo.get(service.id);
 						return (
 							<ServiceRow
-								key={`row-${i}`}
+								key={service.id}
 								service={service}
 								isSelected={startIndex + i === state.selectedIndex}
 								index={startIndex + i}
@@ -417,9 +418,10 @@ export function ServiceList() {
 						);
 					}
 					// Empty row placeholder to fill space and clear old content
+					// Using position-based key is intentional for empty placeholder rows
 					return (
 						<box
-							key={`empty-${i}`}
+							key={`empty-row-placeholder-${startIndex + i}`}
 							height={1}
 							backgroundColor={i % 2 === 0 ? "#1f2937" : "#111827"}
 						>

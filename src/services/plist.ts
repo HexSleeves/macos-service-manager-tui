@@ -162,11 +162,12 @@ function parseDictContent(content: string): Record<string, unknown> {
 	const keyRegex = /<key>([^<]+)<\/key>/g;
 	const keys: { key: string; index: number }[] = [];
 
-	let match: RegExpExecArray | null;
-	while ((match = keyRegex.exec(content)) !== null) {
+	let match: RegExpExecArray | null = keyRegex.exec(content);
+	while (match !== null) {
 		if (match[1]) {
 			keys.push({ key: match[1], index: match.index + match[0].length });
 		}
+		match = keyRegex.exec(content);
 	}
 
 	for (let i = 0; i < keys.length; i++) {
@@ -263,9 +264,10 @@ function parseArrayContent(content: string): unknown[] {
 	const elementRegex =
 		/<(string|integer|real|true|false|array|dict|data|date)(\s*\/|>[\s\S]*?<\/\1)>/g;
 
-	let match: RegExpExecArray | null;
-	while ((match = elementRegex.exec(content)) !== null) {
+	let match: RegExpExecArray | null = elementRegex.exec(content);
+	while (match !== null) {
 		result.push(parseValue(match[0]));
+		match = elementRegex.exec(content);
 	}
 
 	return result;

@@ -165,14 +165,16 @@ export function normalizePrintKey(key: string): string {
 	normalized = normalized.replace(/[\s]+/g, "_");
 
 	// Try lookup after normalization
-	if (KEY_NORMALIZATIONS[normalized]) {
-		return KEY_NORMALIZATIONS[normalized];
+	const normalizedLookup = KEY_NORMALIZATIONS[normalized];
+	if (normalizedLookup) {
+		return normalizedLookup;
 	}
 
 	// Try without underscores (for variations like "lastExitStatus" -> "lastexitstatus")
 	const noUnderscores = normalized.replace(/_/g, "");
-	if (KEY_NORMALIZATIONS[noUnderscores]) {
-		return KEY_NORMALIZATIONS[noUnderscores];
+	const noUnderscoresLookup = KEY_NORMALIZATIONS[noUnderscores];
+	if (noUnderscoresLookup) {
+		return noUnderscoresLookup;
 	}
 
 	return normalized;
