@@ -38,9 +38,12 @@ async function execCommand(
  * Format varies but generally:
  * --- com.apple.system_extension.network_extension
  * enabled	active	teamID	bundleID [version]
+ *
+ * Note: The same extension can appear multiple times under different categories.
+ * We deduplicate by bundleId, keeping the most "active" instance and merging categories.
  */
 export function parseSystemExtensionsList(output: string): SystemExtension[] {
-	const extensions: SystemExtension[] = [];
+	const extensionMap = new Map<string, SystemExtension>();
 	const lines = output.split("\n");
 
 	let currentCategory = "";
@@ -65,7 +68,27 @@ export function parseSystemExtensionsList(output: string): SystemExtension[] {
 			const status = getExtensionStatus(enabledState, activeState);
 			const state = mapExtensionState(activeState);
 
-			extensions.push({
+			// Check if we already have this extension
+			const existing = extensionMap.get(bundleId);
+			if (existing) {
+				// Merge categories
+				if (currentCategory && existing.categories) {
+					if (!existing.categories.includes(currentCategory)) {
+						existing.categories.push(currentCategory);
+					}
+				} else if (currentCategory) {
+					existing.categories = [currentCategory];
+				}
+				// Keep the more "active" status (running > stopped > disabled > error > unknown)
+				if (isMoreActiveStatus(status, existing.status)) {
+					existing.status = status;
+					existing.state = state;
+					existing.enabled = enabledState === "enabled";
+				}
+				continue;
+			}
+
+			extensionMap.set(bundleId, {
 				id: `sysext-${bundleId}`,
 				label: bundleId,
 				displayName: bundleId.split(".").pop() || bundleId,
@@ -85,7 +108,21 @@ export function parseSystemExtensionsList(output: string): SystemExtension[] {
 		}
 	}
 
-	return extensions;
+	return Array.from(extensionMap.values());
+}
+
+/**
+ * Compare status "activity" levels - returns true if newStatus is more active
+ */
+function isMoreActiveStatus(newStatus: ServiceStatus, oldStatus: ServiceStatus): boolean {
+	const priority: Record<ServiceStatus, number> = {
+		running: 5,
+		stopped: 4,
+		disabled: 3,
+		error: 2,
+		unknown: 1,
+	};
+	return (priority[newStatus] ?? 0) > (priority[oldStatus] ?? 0);
 }
 
 function getExtensionStatus(enabled?: string, active?: string): ServiceStatus {
