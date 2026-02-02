@@ -399,15 +399,23 @@ export function ServiceList() {
 			</box>
 
 			{/* Service rows - virtual scrolling */}
-			{/* Render exactly visibleRows to prevent ghost rows */}
-			<box flexDirection="column" flexGrow={1} overflow="hidden">
+			{/* Key on container forces re-render when list size changes significantly */}
+			{/* biome-ignore lint/suspicious/noArrayIndexKey: position-based keys required for virtual scrolling */}
+			<box 
+				key={`list-container-${filteredServices.length}`}
+				flexDirection="column" 
+				flexGrow={1} 
+				overflow="hidden"
+			>
 				{Array.from({ length: visibleRows }).map((_, i) => {
 					const service = visibleServices[i];
 					if (service) {
 						const matchInfo = serviceMatchInfo.get(service.id);
+						// Use position-based key for virtual scrolling - service.id causes issues
+						// when list changes because same ID appears at different positions
 						return (
 							<ServiceRow
-								key={service.id}
+								key={`row-${i}`}
 								service={service}
 								isSelected={startIndex + i === state.selectedIndex}
 								index={startIndex + i}
@@ -418,10 +426,9 @@ export function ServiceList() {
 						);
 					}
 					// Empty row placeholder to fill space and clear old content
-					// Using position-based key is intentional for empty placeholder rows
 					return (
 						<box
-							key={`empty-row-placeholder-${startIndex + i}`}
+							key={`empty-${i}`}
 							height={1}
 							backgroundColor={i % 2 === 0 ? "#1f2937" : "#111827"}
 						>
