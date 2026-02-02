@@ -28,6 +28,7 @@ export function isMacOS(): boolean {
 
 /**
  * Fetch all services from the system
+ * Throws if launchctl list fails (critical failure)
  */
 export async function fetchAllServices(): Promise<Service[]> {
 	if (!isMacOS()) {
@@ -36,16 +37,33 @@ export async function fetchAllServices(): Promise<Service[]> {
 		return getMockServices();
 	}
 
-	const [launchServices, systemExtensions] = await Promise.all([
-		listLaunchServices(),
-		listSystemExtensions(),
-	]);
+	try {
+		// launchctl list is critical - if it fails, throw
+		// systemextensions list is non-critical - return empty array on failure
+		const [launchServices, systemExtensions] = await Promise.allSettled([
+			listLaunchServices(),
+			listSystemExtensions(),
+		]);
 
-	// Combine and deduplicate
-	const allServices = [...launchServices, ...systemExtensions];
+		// If launchctl failed, throw the error
+		if (launchServices.status === "rejected") {
+			throw launchServices.reason;
+		}
 
-	// Sort by label by default
-	return allServices.sort((a, b) => a.label.localeCompare(b.label));
+		// Combine services (system extensions may have failed, that's OK)
+		const extensions =
+			systemExtensions.status === "fulfilled" ? systemExtensions.value : [];
+
+		const allServices = [...launchServices.value, ...extensions];
+
+		// Sort by label by default
+		return allServices.sort((a, b) => a.label.localeCompare(b.label));
+	} catch (error) {
+		// Re-throw with context
+		throw new Error(
+			`Failed to fetch services: ${error instanceof Error ? error.message : String(error)}`,
+		);
+	}
 }
 
 /**
@@ -236,6 +254,8 @@ export async function performServiceAction(
 // Re-export types and utilities
 export {
 	executeServiceAction,
+	fetchServiceMetadata,
+	findPlistPath,
 	getCurrentUid,
 	getMacOSVersion,
 	getPlistMetadata,

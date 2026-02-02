@@ -14,6 +14,7 @@ import {
 } from "react";
 import {
 	fetchAllServices,
+	fetchServiceMetadata,
 	filterServicesWithScores,
 	getNextSortField,
 	performServiceAction,
@@ -133,6 +134,8 @@ const initialState: AppState = {
 	dryRun: false,
 	dryRunCommand: null,
 	offline: initialOfflineState,
+	serviceMetadata: new Map(),
+	metadataLoading: new Map(),
 };
 
 // Reducer
@@ -330,6 +333,39 @@ function appReducer(state: AppState, action: AppAction): AppState {
 				loading: true,
 			};
 
+		case "SET_SERVICE_METADATA": {
+			const newMetadata = new Map(state.serviceMetadata);
+			const existing = newMetadata.get(action.payload.serviceId);
+			// Merge with existing metadata
+			newMetadata.set(action.payload.serviceId, {
+				...existing,
+				...action.payload.metadata,
+			});
+			return {
+				...state,
+				serviceMetadata: newMetadata,
+			};
+		}
+
+		case "SET_METADATA_LOADING": {
+			const newLoading = new Map(state.metadataLoading);
+			newLoading.set(action.payload.serviceId, {
+				loading: action.payload.loading,
+				error: action.payload.error ?? null,
+			});
+			return {
+				...state,
+				metadataLoading: newLoading,
+			};
+		}
+
+		case "CLEAR_METADATA_CACHE":
+			return {
+				...state,
+				serviceMetadata: new Map(),
+				metadataLoading: new Map(),
+			};
+
 		default:
 			return state;
 	}
@@ -392,12 +428,20 @@ export function useAppProvider() {
 		return { filteredServices: services, serviceMatchInfo: matchInfo };
 	}, [state.services, state.filter, state.searchQuery, state.sort]);
 
-	// Currently selected service
+	// Currently selected service (with metadata merged)
 	const selectedService = useMemo(() => {
 		if (filteredServices.length === 0) return null;
 		const index = Math.min(state.selectedIndex, filteredServices.length - 1);
-		return filteredServices[index] ?? null;
-	}, [filteredServices, state.selectedIndex]);
+		const service = filteredServices[index];
+		if (!service) return null;
+
+		// Merge with cached metadata
+		const metadata = state.serviceMetadata.get(service.id);
+		if (metadata) {
+			return { ...service, ...metadata };
+		}
+		return service;
+	}, [filteredServices, state.selectedIndex, state.serviceMetadata]);
 
 	// Fetch services with offline mode support
 	const refresh = useCallback(async () => {
@@ -532,12 +576,74 @@ export function useAppProvider() {
 		};
 	}, [state.offline.isOffline, attemptReconnect]);
 
+	// Load metadata for selected service
+	useEffect(() => {
+		if (!selectedService) return;
+		const serviceId = selectedService.id;
+
+		// Skip if metadata already loaded
+		if (state.serviceMetadata.has(serviceId)) return;
+		// Skip if already loading
+		const loadingState = state.metadataLoading.get(serviceId);
+		if (loadingState?.loading) return;
+		// Skip system extensions (they don't have plists)
+		if (selectedService.type === "SystemExtension") return;
+
+		// Start loading
+		dispatch({
+			type: "SET_METADATA_LOADING",
+			payload: { serviceId, loading: true },
+		});
+
+		// Fetch metadata
+		fetchServiceMetadata(selectedService)
+			.then((metadata) => {
+				dispatch({
+					type: "SET_SERVICE_METADATA",
+					payload: { serviceId, metadata },
+				});
+				dispatch({
+					type: "SET_METADATA_LOADING",
+					payload: { serviceId, loading: false },
+				});
+			})
+			.catch((error) => {
+				dispatch({
+					type: "SET_METADATA_LOADING",
+					payload: {
+						serviceId,
+						loading: false,
+						error:
+							error instanceof Error
+								? error.message
+								: "Failed to load metadata",
+					},
+				});
+			});
+	}, [selectedService, state.serviceMetadata, state.metadataLoading]);
+
+	// Clear metadata cache on refresh
+	useEffect(() => {
+		if (state.loading) {
+			dispatch({ type: "CLEAR_METADATA_CACHE" });
+		}
+	}, [state.loading]);
+
+	// Helper to get metadata loading state
+	const getMetadataLoadingState = useCallback(
+		(serviceId: string) => {
+			return state.metadataLoading.get(serviceId);
+		},
+		[state.metadataLoading],
+	);
+
 	const contextValue: AppContextType = {
 		state,
 		dispatch,
 		filteredServices,
 		serviceMatchInfo,
 		selectedService,
+		getMetadataLoadingState,
 		executeAction,
 		refresh,
 	};

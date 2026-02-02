@@ -138,6 +138,12 @@ export interface OfflineState {
 	lastError: string | null;
 }
 
+// Service metadata loading state
+export interface ServiceMetadataState {
+	loading: boolean;
+	error: string | null;
+}
+
 // App state
 export interface AppState {
 	services: Service[];
@@ -158,6 +164,10 @@ export interface AppState {
 	dryRun: boolean; // When true, show commands without executing them
 	dryRunCommand: string | null; // The command that would be executed in dry-run mode
 	offline: OfflineState; // Offline mode state
+	// Lazy-loaded metadata: map of service ID -> metadata
+	serviceMetadata: Map<string, Partial<Service>>;
+	// Metadata loading states: map of service ID -> loading state
+	metadataLoading: Map<string, ServiceMetadataState>;
 }
 
 // App actions
@@ -190,7 +200,16 @@ export type AppAction =
 	| { type: "FETCH_SUCCESS"; payload: Service[] }
 	| { type: "FETCH_FAILURE"; payload: string }
 	| { type: "SET_ONLINE" }
-	| { type: "RECONNECT_ATTEMPT" };
+	| { type: "RECONNECT_ATTEMPT" }
+	| {
+			type: "SET_SERVICE_METADATA";
+			payload: { serviceId: string; metadata: Partial<Service> };
+	  }
+	| {
+			type: "SET_METADATA_LOADING";
+			payload: { serviceId: string; loading: boolean; error?: string | null };
+	  }
+	| { type: "CLEAR_METADATA_CACHE" };
 
 // Match metadata for fuzzy search highlighting
 export interface ServiceMatchInfo {
@@ -205,11 +224,15 @@ export interface ServiceMatchInfo {
 // Context type
 export interface AppContextType {
 	state: AppState;
-	dispatch: React.Dispatch<AppAction>;
+	dispatch: (action: AppAction) => void;
 	filteredServices: Service[];
 	/** Match info for each filtered service (same order as filteredServices) */
 	serviceMatchInfo: Map<string, ServiceMatchInfo>;
 	selectedService: Service | null;
+	/** Get metadata loading state for a service */
+	getMetadataLoadingState: (
+		serviceId: string,
+	) => ServiceMetadataState | undefined;
 	executeAction: (
 		action: ServiceAction,
 		service: Service,

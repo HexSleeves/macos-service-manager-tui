@@ -3,17 +3,16 @@
  */
 
 export {
-	withRetry,
-	withRetryResult,
-	isTransientError,
-	calculateDelay,
-	type RetryOptions,
-	type RetryResult,
-} from "./retry";
-
-export {
+	type FuzzyMatch,
 	fuzzyMatch,
 	fuzzyMatchService,
-	type FuzzyMatch,
 	type ServiceFuzzyMatch,
 } from "./fuzzy";
+export {
+	calculateDelay,
+	isTransientError,
+	type RetryOptions,
+	type RetryResult,
+	withRetry,
+	withRetryResult,
+} from "./retry";

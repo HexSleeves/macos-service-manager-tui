@@ -5,6 +5,28 @@
 
 import { useAppState } from "../hooks/useAppState";
 
+// Shared layout constants for consistent alignment
+const LABEL_WIDTH = 8;
+const ROW_GAP = 1;
+
+interface FilterRowProps {
+	label: string;
+	children: React.ReactNode;
+}
+
+function FilterRow({ label, children }: FilterRowProps) {
+	return (
+		<box flexDirection="row" alignItems="center" gap={ROW_GAP}>
+			<text fg="#6b7280" width={LABEL_WIDTH}>
+				{label}
+			</text>
+			<box flexDirection="row" gap={1}>
+				{children}
+			</box>
+		</box>
+	);
+}
+
 interface FilterButtonProps {
 	label: string;
 	active: boolean;
@@ -18,7 +40,33 @@ function FilterButton({ label, active, shortcut }: FilterButtonProps) {
 	return (
 		<box backgroundColor={bgColor} paddingLeft={1} paddingRight={1}>
 			<text fg={fgColor}>
-				{shortcut && <span fg="#60a5fa">[{shortcut}]</span>} {label}
+				{shortcut ? (
+					<>
+						<span fg="#60a5fa">[{shortcut}]</span> {label}
+					</>
+				) : (
+					label
+				)}
+			</text>
+		</box>
+	);
+}
+
+interface TogglePillProps {
+	label: string;
+	active: boolean;
+	shortcut?: string;
+}
+
+function TogglePill({ label, active, shortcut }: TogglePillProps) {
+	const bgColor = active ? "#2563eb" : "#374151";
+	const fgColor = active ? "#22c55e" : "#ef4444";
+
+	return (
+		<box backgroundColor={bgColor} paddingLeft={1} paddingRight={1}>
+			<text fg={fgColor}>
+				[{active ? "✓" : "x"}] {label}
+				{shortcut && <span fg="#9ca3af"> ({shortcut})</span>}
 			</text>
 		</box>
 	);
@@ -31,84 +79,61 @@ export function FilterBar() {
 	return (
 		<box flexDirection="column" backgroundColor="#1f2937" padding={1} gap={1}>
 			{/* Type filter */}
-			<box flexDirection="row" gap={1} alignItems="center">
-				<text fg="#6b7280" width={8}>
-					Type:
-				</text>
-				<box flexDirection="row" gap={1}>
-					<FilterButton
-						label="All"
-						active={filter.type === "all"}
-						shortcut="1"
-					/>
-					<FilterButton
-						label="Daemons"
-						active={filter.type === "LaunchDaemon"}
-						shortcut="2"
-					/>
-					<FilterButton
-						label="Agents"
-						active={filter.type === "LaunchAgent"}
-						shortcut="3"
-					/>
-					<FilterButton
-						label="SysExt"
-						active={filter.type === "SystemExtension"}
-						shortcut="4"
-					/>
-				</box>
-			</box>
+			<FilterRow label="Type:">
+				<FilterButton label="All" active={filter.type === "all"} shortcut="1" />
+				<FilterButton
+					label="Daemons"
+					active={filter.type === "LaunchDaemon"}
+					shortcut="2"
+				/>
+				<FilterButton
+					label="Agents"
+					active={filter.type === "LaunchAgent"}
+					shortcut="3"
+				/>
+				<FilterButton
+					label="SysExt"
+					active={filter.type === "SystemExtension"}
+					shortcut="4"
+				/>
+			</FilterRow>
 
 			{/* Domain filter */}
-			<box flexDirection="row" gap={1} alignItems="center">
-				<text fg="#6b7280" width={8}>
-					Domain:
-				</text>
-				<box flexDirection="row" gap={1}>
-					<FilterButton label="All" active={filter.domain === "all"} />
-					<FilterButton label="System" active={filter.domain === "system"} />
-					<FilterButton label="User" active={filter.domain === "user"} />
-				</box>
-			</box>
+			<FilterRow label="Domain:">
+				<FilterButton label="All" active={filter.domain === "all"} />
+				<FilterButton label="System" active={filter.domain === "system"} />
+				<FilterButton label="User" active={filter.domain === "user"} />
+			</FilterRow>
 
 			{/* Status filter */}
-			<box flexDirection="row" gap={1} alignItems="center">
-				<text fg="#6b7280" width={8}>
-					Status:
-				</text>
-				<box flexDirection="row" gap={1}>
-					<FilterButton label="All" active={filter.status === "all"} />
-					<FilterButton label="Running" active={filter.status === "running"} />
-					<FilterButton label="Stopped" active={filter.status === "stopped"} />
-					<FilterButton label="Error" active={filter.status === "error"} />
-				</box>
-			</box>
+			<FilterRow label="Status:">
+				<FilterButton label="All" active={filter.status === "all"} />
+				<FilterButton label="Running" active={filter.status === "running"} />
+				<FilterButton label="Stopped" active={filter.status === "stopped"} />
+				<FilterButton label="Error" active={filter.status === "error"} />
+			</FilterRow>
 
 			{/* Toggles */}
-			<box flexDirection="row" gap={2} alignItems="center">
-				<text fg="#6b7280" width={8}>
-					Show:
-				</text>
-				<box flexDirection="row" gap={2}>
-					<text fg={filter.showAppleServices ? "#22c55e" : "#ef4444"}>
-						[{filter.showAppleServices ? "✓" : "x"}] Apple/macOS Services (a)
-					</text>
-					<text fg={filter.showProtected ? "#22c55e" : "#ef4444"}>
-						[{filter.showProtected ? "✓" : "x"}] Protected (p)
-					</text>
-				</box>
-			</box>
+			<FilterRow label="Show:">
+				<TogglePill
+					label="Apple/macOS Services"
+					active={filter.showAppleServices}
+					shortcut="a"
+				/>
+				<TogglePill
+					label="Protected"
+					active={filter.showProtected}
+					shortcut="p"
+				/>
+			</FilterRow>
 
 			{/* Sort info */}
-			<box flexDirection="row" gap={1} alignItems="center">
-				<text fg="#6b7280" width={8}>
-					Sort:
-				</text>
+			<FilterRow label="Sort:">
 				<text fg="#9ca3af">
 					{sort.field} ({sort.direction})
 				</text>
 				<text fg="#6b7280"> - Press [s] to cycle, [S] to toggle direction</text>
-			</box>
+			</FilterRow>
 		</box>
 	);
 }

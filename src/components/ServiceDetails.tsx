@@ -58,7 +58,7 @@ function ActionButton({
 }
 
 export function ServiceDetails() {
-	const { state, selectedService } = useAppState();
+	const { state, selectedService, getMetadataLoadingState } = useAppState();
 
 	if (!selectedService) {
 		return (
@@ -80,6 +80,11 @@ export function ServiceDetails() {
 	const isRunning = service.status === "running";
 	const isSystemExt = service.type === "SystemExtension";
 	const isOffline = state.offline.isOffline;
+
+	// Check if metadata is loading
+	const metadataState = getMetadataLoadingState(service.id);
+	const isLoadingMetadata = metadataState?.loading ?? false;
+	const metadataError = metadataState?.error;
 
 	// Cast for system extension properties
 	const sysExt =
@@ -135,6 +140,16 @@ export function ServiceDetails() {
 					value={service.enabled ? "Yes" : "No"}
 					color={service.enabled ? "#22c55e" : "#ef4444"}
 				/>
+				{isLoadingMetadata && (
+					<box paddingLeft={1}>
+						<text fg="#6b7280">Loading metadata...</text>
+					</box>
+				)}
+				{metadataError && (
+					<box paddingLeft={1}>
+						<text fg="#ef4444">Failed to load metadata: {metadataError}</text>
+					</box>
+				)}
 				<DetailRow label="Plist Path" value={service.plistPath} />
 				<DetailRow label="Description" value={service.description} />
 				{service.lastError && (
