@@ -33,7 +33,7 @@ function isWordBoundary(str: string, index: number): boolean {
 	if (!prevChar || !currChar) return false;
 
 	// After separator characters
-	if (/[\._\-\/\s]/.test(prevChar)) return true;
+	if (/[._\-/\s]/.test(prevChar)) return true;
 
 	// camelCase boundary (lowercase followed by uppercase)
 	if (/[a-z]/.test(prevChar) && /[A-Z]/.test(currChar)) return true;
@@ -271,7 +271,11 @@ export function fuzzyMatchService(
 	const descScore = descMatch.matched ? descMatch.score * 0.8 : -Infinity;
 
 	// Return best match
-	if (labelScore >= displayScore && labelScore >= descScore && labelMatch.matched) {
+	if (
+		labelScore >= displayScore &&
+		labelScore >= descScore &&
+		labelMatch.matched
+	) {
 		return {
 			matched: true,
 			score: labelScore,

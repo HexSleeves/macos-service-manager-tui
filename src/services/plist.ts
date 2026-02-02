@@ -344,7 +344,8 @@ function mapToPlistData(raw: Record<string, unknown>): PlistData {
 			data.startCalendarInterval =
 				raw.StartCalendarInterval as CalendarInterval[];
 		} else {
-			data.startCalendarInterval = raw.StartCalendarInterval as CalendarInterval;
+			data.startCalendarInterval =
+				raw.StartCalendarInterval as CalendarInterval;
 		}
 	}
 

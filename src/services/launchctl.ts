@@ -19,8 +19,8 @@ import type {
 	ServiceDomain,
 	ServiceStatus,
 } from "../types";
-import { isTransientError, withRetry, type RetryOptions } from "../utils/retry";
-import { readPlist, describePlistConfig } from "./plist";
+import { isTransientError, type RetryOptions, withRetry } from "../utils/retry";
+import { describePlistConfig, readPlist } from "./plist";
 
 /**
  * Validate a service label to prevent command injection
@@ -68,7 +68,9 @@ interface CommandResultWithRetry extends CommandResult {
 }
 
 /** Retry callback for logging */
-let retryLogger: ((attempt: number, error: Error, delayMs: number) => void) | null = null;
+let retryLogger:
+	| ((attempt: number, error: Error, delayMs: number) => void)
+	| null = null;
 
 /**
  * Set a callback to be called when retries occur
@@ -153,19 +155,19 @@ async function execCommandWithRetry(
 	};
 
 	try {
-		const result = await withRetry(
-			async () => {
-				const cmdResult = await execCommandOnce(command, args, timeoutMs);
-				
-				// Check if the error in stderr is transient and should trigger a retry
-				if (cmdResult.exitCode !== 0 && isTransientError(cmdResult.stderr)) {
-					throw new Error(cmdResult.stderr || `Command failed with exit code ${cmdResult.exitCode}`);
-				}
-				
-				return cmdResult;
-			},
-			options,
-		);
+		const result = await withRetry(async () => {
+			const cmdResult = await execCommandOnce(command, args, timeoutMs);
+
+			// Check if the error in stderr is transient and should trigger a retry
+			if (cmdResult.exitCode !== 0 && isTransientError(cmdResult.stderr)) {
+				throw new Error(
+					cmdResult.stderr ||
+						`Command failed with exit code ${cmdResult.exitCode}`,
+				);
+			}
+
+			return cmdResult;
+		}, options);
 
 		return {
 			...result.value,
@@ -476,7 +478,7 @@ const KEY_NORMALIZATIONS: Record<string, string> = {
 	"last spawn error": "last_spawn_error",
 	"last-spawn-error": "last_spawn_error",
 	lastspawnerror: "last_spawn_error",
-	"last_spawn_error": "last_spawn_error",
+	last_spawn_error: "last_spawn_error",
 
 	// Other common keys
 	"active count": "active_count",
@@ -502,9 +504,7 @@ export function normalizePrintKey(key: string): string {
 	let normalized = key.toLowerCase().trim();
 
 	// Handle camelCase and PascalCase by inserting underscores
-	normalized = normalized
-		.replace(/([a-z])([A-Z])/g, "$1_$2")
-		.toLowerCase();
+	normalized = normalized.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();
 
 	// Replace hyphens with underscores
 	normalized = normalized.replace(/-/g, "_");
@@ -580,9 +580,7 @@ function parseColonFormat(line: string): { key: string; value: string } | null {
 /**
  * Parse legacy plist-style format: "Key" = "Value";
  */
-function parsePlistFormat(
-	line: string,
-): { key: string; value: string } | null {
+function parsePlistFormat(line: string): { key: string; value: string } | null {
 	const match = line.match(/^\s*"([^"]+)"\s*=\s*(.+);\s*$/);
 	if (match?.[1] && match[2]) {
 		let value = match[2].trim();
@@ -864,8 +862,7 @@ export async function listServices(): Promise<Service[]> {
 				label.includes("daemon") ||
 				!plistPath?.includes("LaunchAgents");
 			const isSystemLevel =
-				plistPath?.startsWith("/Library/") ||
-				plistPath?.startsWith("/System/");
+				plistPath?.startsWith("/Library/") || plistPath?.startsWith("/System/");
 
 			const type: "LaunchDaemon" | "LaunchAgent" =
 				isDaemon && isSystemLevel ? "LaunchDaemon" : "LaunchAgent";
@@ -977,9 +974,10 @@ async function findPlistPath(label: string): Promise<string | undefined> {
 /**
  * Read plist file and extract metadata for a service
  */
-export async function getPlistMetadata(
-	plistPath: string | undefined,
-): Promise<{ metadata: PlistMetadata | undefined; description: string | undefined }> {
+export async function getPlistMetadata(plistPath: string | undefined): Promise<{
+	metadata: PlistMetadata | undefined;
+	description: string | undefined;
+}> {
 	if (!plistPath) {
 		return { metadata: undefined, description: undefined };
 	}
@@ -1143,14 +1141,14 @@ export async function executeServiceAction(
 			retryInfo: result.retryInfo,
 		};
 	}
-	
+
 	// Parse and categorize error
 	const errorInfo = parseErrorMessage(result.stderr, result.exitCode);
-	
+
 	const failureMessage = result.retryInfo?.retried
 		? `Failed to ${action} service (after ${result.retryInfo.attempts} attempts)`
 		: `Failed to ${action} service`;
-	
+
 	return {
 		success: false,
 		message: failureMessage,
@@ -1169,16 +1167,19 @@ function parseErrorMessage(
 	exitCode: number,
 ): { message: string; requiresRoot: boolean; sipProtected: boolean } {
 	const lower = stderr.toLowerCase();
-	
+
 	// Permission errors
-	if (lower.includes("operation not permitted") || lower.includes("permission denied")) {
+	if (
+		lower.includes("operation not permitted") ||
+		lower.includes("permission denied")
+	) {
 		return {
 			message: "Permission denied - may require administrator privileges",
 			requiresRoot: true,
 			sipProtected: false,
 		};
 	}
-	
+
 	// SIP protection
 	if (lower.includes("system integrity protection") || lower.includes("sip")) {
 		return {
@@ -1187,25 +1188,31 @@ function parseErrorMessage(
 			sipProtected: true,
 		};
 	}
-	
+
 	// Service not found
-	if (lower.includes("could not find service") || lower.includes("no such service")) {
+	if (
+		lower.includes("could not find service") ||
+		lower.includes("no such service")
+	) {
 		return {
 			message: "Service not found or not loaded",
 			requiresRoot: false,
 			sipProtected: false,
 		};
 	}
-	
+
 	// Already running/stopped
-	if (lower.includes("already running") || lower.includes("already bootstrapped")) {
+	if (
+		lower.includes("already running") ||
+		lower.includes("already bootstrapped")
+	) {
 		return {
 			message: "Service is already running",
 			requiresRoot: false,
 			sipProtected: false,
 		};
 	}
-	
+
 	if (lower.includes("not running") || lower.includes("no such process")) {
 		return {
 			message: "Service is not running",
@@ -1213,16 +1220,19 @@ function parseErrorMessage(
 			sipProtected: false,
 		};
 	}
-	
+
 	// Bootstrap errors
-	if (lower.includes("could not bootstrap") || lower.includes("bootstrap failed")) {
+	if (
+		lower.includes("could not bootstrap") ||
+		lower.includes("bootstrap failed")
+	) {
 		return {
 			message: "Failed to bootstrap service - check plist configuration",
 			requiresRoot: false,
 			sipProtected: false,
 		};
 	}
-	
+
 	// Timeout
 	if (lower.includes("timed out")) {
 		return {
@@ -1231,7 +1241,7 @@ function parseErrorMessage(
 			sipProtected: false,
 		};
 	}
-	
+
 	// Generic exit code handling
 	if (exitCode === 1) {
 		return {
@@ -1240,7 +1250,7 @@ function parseErrorMessage(
 			sipProtected: false,
 		};
 	}
-	
+
 	// Default
 	return {
 		message: stderr.trim() || `Unknown error (exit code ${exitCode})`,

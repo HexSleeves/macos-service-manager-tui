@@ -50,7 +50,8 @@ function ActionButton({
 	return (
 		<box backgroundColor={bgColor} paddingLeft={1} paddingRight={1}>
 			<text fg={fgColor}>
-				[{shortcut}] {label}{offline && !disabled ? " (offline)" : ""}
+				[{shortcut}] {label}
+				{offline && !disabled ? " (offline)" : ""}
 			</text>
 		</box>
 	);
@@ -217,7 +218,12 @@ export function ServiceDetails() {
 					<text fg="#9ca3af">Actions:</text>
 					<box flexDirection="row" flexWrap="wrap" gap={1}>
 						{!isRunning && (
-							<ActionButton label="Start" shortcut="s" disabled={isProtected} offline={isOffline} />
+							<ActionButton
+								label="Start"
+								shortcut="s"
+								disabled={isProtected}
+								offline={isOffline}
+							/>
 						)}
 						{isRunning && (
 							<ActionButton

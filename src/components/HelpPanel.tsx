@@ -34,9 +34,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 	},
 	{
 		title: "Sorting",
-		shortcuts: [
-			{ key: "s/S", description: "Cycle field/dir" },
-		],
+		shortcuts: [{ key: "s/S", description: "Cycle field/dir" }],
 	},
 	{
 		title: "Actions",

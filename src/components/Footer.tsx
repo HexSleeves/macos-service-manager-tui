@@ -12,12 +12,17 @@ export function Footer() {
 		{ key: "↑↓/jk", action: "Navigate" },
 		{ key: "/", action: "Search" },
 		{ key: "f", action: "Filter" },
-		{ key: "D", action: state.dryRun ? "Dry ✓" : "Dry", highlight: state.dryRun },
+		{
+			key: "D",
+			action: state.dryRun ? "Dry ✓" : "Dry",
+			highlight: state.dryRun,
+		},
 		{ key: "?", action: "Help" },
 		{ key: "q", action: "Quit" },
 	];
 
-	const showMessage = state.lastActionResult || state.loading || state.executingAction;
+	const showMessage =
+		state.lastActionResult || state.loading || state.executingAction;
 
 	return (
 		<box flexDirection="column" height={3} backgroundColor="#1f2937">
@@ -30,14 +35,16 @@ export function Footer() {
 					{state.loading && !state.executingAction && (
 						<text fg="#60a5fa">↻ Loading services...</text>
 					)}
-					{state.lastActionResult && !state.executingAction && !state.loading && (
-						<text fg={state.lastActionResult.success ? "#22c55e" : "#ef4444"}>
-							{state.lastActionResult.success ? "✓" : "✗"}{" "}
-							{state.lastActionResult.message}
-							{state.lastActionResult.error &&
-								` - ${state.lastActionResult.error}`}
-						</text>
-					)}
+					{state.lastActionResult &&
+						!state.executingAction &&
+						!state.loading && (
+							<text fg={state.lastActionResult.success ? "#22c55e" : "#ef4444"}>
+								{state.lastActionResult.success ? "✓" : "✗"}{" "}
+								{state.lastActionResult.message}
+								{state.lastActionResult.error &&
+									` - ${state.lastActionResult.error}`}
+							</text>
+						)}
 				</box>
 			)}
 
@@ -50,7 +57,10 @@ export function Footer() {
 			>
 				{shortcuts.map(({ key, action, highlight }) => (
 					<box key={key} flexDirection="row" gap={1}>
-						<text fg={highlight ? "#fbbf24" : "#60a5fa"} bg={highlight ? "#78350f" : "#374151"}>
+						<text
+							fg={highlight ? "#fbbf24" : "#60a5fa"}
+							bg={highlight ? "#78350f" : "#374151"}
+						>
 							{` ${key} `}
 						</text>
 						<text fg={highlight ? "#fbbf24" : "#9ca3af"}>{action}</text>

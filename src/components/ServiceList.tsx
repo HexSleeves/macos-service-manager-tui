@@ -42,7 +42,14 @@ const COL_BORDER = 2; // list border
 // Minimum width for label to be useful
 const MIN_LABEL_WIDTH = 15;
 // Minimum terminal width to display the list
-const MIN_TERMINAL_WIDTH = COL_STATUS + COL_PROTECTION + COL_TYPE_DOMAIN_COMBINED + COL_PID + COL_PADDING + COL_BORDER + MIN_LABEL_WIDTH;
+const MIN_TERMINAL_WIDTH =
+	COL_STATUS +
+	COL_PROTECTION +
+	COL_TYPE_DOMAIN_COMBINED +
+	COL_PID +
+	COL_PADDING +
+	COL_BORDER +
+	MIN_LABEL_WIDTH;
 // Width threshold to show separate type/domain columns
 const WIDE_TERMINAL_THRESHOLD = 100;
 
@@ -66,17 +73,21 @@ interface ColumnLayout {
 }
 
 function calculateColumnLayout(terminalWidth: number): ColumnLayout {
-	const fixedWidth = COL_STATUS + COL_PROTECTION + COL_PID + COL_PADDING + COL_BORDER;
-	
+	const fixedWidth =
+		COL_STATUS + COL_PROTECTION + COL_PID + COL_PADDING + COL_BORDER;
+
 	// Check if terminal is too narrow
 	if (terminalWidth < MIN_TERMINAL_WIDTH) {
 		return {
-			labelWidth: Math.max(1, terminalWidth - fixedWidth - COL_TYPE_DOMAIN_COMBINED),
+			labelWidth: Math.max(
+				1,
+				terminalWidth - fixedWidth - COL_TYPE_DOMAIN_COMBINED,
+			),
 			separateTypeAndDomain: false,
 			isTooNarrow: true,
 		};
 	}
-	
+
 	// Wide terminal: show separate type and domain columns
 	if (terminalWidth >= WIDE_TERMINAL_THRESHOLD) {
 		const typeAndDomainWidth = COL_TYPE_SEPARATE + COL_DOMAIN_SEPARATE;
@@ -86,7 +97,7 @@ function calculateColumnLayout(terminalWidth: number): ColumnLayout {
 			isTooNarrow: false,
 		};
 	}
-	
+
 	// Normal width: combined type/domain
 	return {
 		labelWidth: terminalWidth - fixedWidth - COL_TYPE_DOMAIN_COMBINED,
@@ -163,7 +174,14 @@ function HighlightedText({
 	);
 }
 
-function ServiceRow({ service, isSelected, index, layout, matchInfo, hasSearchQuery }: ServiceRowProps) {
+function ServiceRow({
+	service,
+	isSelected,
+	index,
+	layout,
+	matchInfo,
+	hasSearchQuery,
+}: ServiceRowProps) {
 	const statusColor = getStatusColor(service.status);
 	const statusSymbol = getStatusSymbol(service.status);
 	const protectionSymbol = getProtectionSymbol(service.protection);
@@ -262,7 +280,8 @@ function ServiceRow({ service, isSelected, index, layout, matchInfo, hasSearchQu
 
 export function ServiceList() {
 	const { state, filteredServices, serviceMatchInfo } = useAppState();
-	const { height: terminalHeight, width: terminalWidth } = useTerminalDimensions();
+	const { height: terminalHeight, width: terminalWidth } =
+		useTerminalDimensions();
 
 	// Calculate column layout based on terminal width
 	const layout = calculateColumnLayout(terminalWidth);
@@ -380,11 +399,7 @@ export function ServiceList() {
 
 			{/* Service rows - virtual scrolling */}
 			{/* Render exactly visibleRows to prevent ghost rows */}
-			<box 
-				flexDirection="column" 
-				flexGrow={1}
-				overflow="hidden"
-			>
+			<box flexDirection="column" flexGrow={1} overflow="hidden">
 				{Array.from({ length: visibleRows }).map((_, i) => {
 					const service = visibleServices[i];
 					if (service) {

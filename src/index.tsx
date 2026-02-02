@@ -37,7 +37,6 @@ function AppContent() {
 		refresh,
 	} = useAppState();
 
-
 	// Keyboard handling
 	useKeyboard((key) => {
 		// Block input while executing an action
@@ -54,7 +53,9 @@ function AppContent() {
 			if (key.name === "return" || key.name === "enter") {
 				dispatch({ type: "CONFIRM_ACTION" });
 				if (state.pendingAction && selectedService) {
-					executeAction(state.pendingAction, selectedService, { dryRun: state.dryRun });
+					executeAction(state.pendingAction, selectedService, {
+						dryRun: state.dryRun,
+					});
 				}
 				return;
 			}
@@ -239,7 +240,8 @@ function AppContent() {
 						payload: {
 							success: false,
 							message: "Cannot perform action - offline mode",
-							error: "Connection to launchd unavailable. Waiting for reconnection...",
+							error:
+								"Connection to launchd unavailable. Waiting for reconnection...",
 						},
 					});
 					return;

@@ -57,28 +57,31 @@ function hasServiceChanged(oldService: Service, newService: Service): boolean {
  * Merge services, only updating those that changed
  * Returns null if nothing changed, otherwise returns the updated array
  */
-function mergeServices(oldServices: Service[], newServices: Service[]): Service[] | null {
+function mergeServices(
+	oldServices: Service[],
+	newServices: Service[],
+): Service[] | null {
 	// Build a map of new services by id
-	const newServiceMap = new Map(newServices.map(s => [s.id, s]));
-	const oldServiceMap = new Map(oldServices.map(s => [s.id, s]));
-	
+	const newServiceMap = new Map(newServices.map((s) => [s.id, s]));
+	const oldServiceMap = new Map(oldServices.map((s) => [s.id, s]));
+
 	// Check if the service set has changed
-	const oldIds = new Set(oldServices.map(s => s.id));
-	const newIds = new Set(newServices.map(s => s.id));
-	
+	const oldIds = new Set(oldServices.map((s) => s.id));
+	const newIds = new Set(newServices.map((s) => s.id));
+
 	// Check for added or removed services
-	const hasAddedOrRemoved = 
-		newServices.some(s => !oldIds.has(s.id)) ||
-		oldServices.some(s => !newIds.has(s.id));
-	
+	const hasAddedOrRemoved =
+		newServices.some((s) => !oldIds.has(s.id)) ||
+		oldServices.some((s) => !newIds.has(s.id));
+
 	if (hasAddedOrRemoved) {
 		// Services were added or removed, return new array
 		return newServices;
 	}
-	
+
 	// Check if any services changed
 	let hasChanges = false;
-	const mergedServices = oldServices.map(oldService => {
+	const mergedServices = oldServices.map((oldService) => {
 		const newService = newServiceMap.get(oldService.id);
 		if (newService && hasServiceChanged(oldService, newService)) {
 			hasChanges = true;
@@ -86,7 +89,7 @@ function mergeServices(oldServices: Service[], newServices: Service[]): Service[
 		}
 		return oldService;
 	});
-	
+
 	return hasChanges ? mergedServices : null;
 }
 
@@ -297,9 +300,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
 				// Only show error if we have no cached data to fall back on
 				error: hasCachedData ? null : action.payload,
 				// If offline with cached data, use cached services
-				services: shouldGoOffline && hasCachedData
-					? state.offline.cachedServices
-					: state.services,
+				services:
+					shouldGoOffline && hasCachedData
+						? state.offline.cachedServices
+						: state.services,
 				offline: {
 					...state.offline,
 					isOffline: shouldGoOffline,
@@ -352,8 +356,12 @@ interface AppProviderProps {
 // Hook for provider logic (to be used in App component)
 export function useAppProvider() {
 	const [state, dispatch] = useReducer(appReducer, initialState);
-	const autoRefreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-	const offlineReconnectRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const autoRefreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+		null,
+	);
+	const offlineReconnectRef = useRef<ReturnType<typeof setInterval> | null>(
+		null,
+	);
 
 	// Filtered and sorted services with match info
 	const { filteredServices, serviceMatchInfo } = useMemo(() => {
@@ -399,7 +407,8 @@ export function useAppProvider() {
 			const services = await fetchAllServices();
 			dispatch({ type: "FETCH_SUCCESS", payload: services });
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : "Failed to fetch services";
+			const errorMessage =
+				error instanceof Error ? error.message : "Failed to fetch services";
 			dispatch({ type: "FETCH_FAILURE", payload: errorMessage });
 		}
 	}, []);
@@ -412,7 +421,8 @@ export function useAppProvider() {
 			dispatch({ type: "FETCH_SUCCESS", payload: services });
 		} catch (error) {
 			// During auto-refresh, track failures but don't show error
-			const errorMessage = error instanceof Error ? error.message : "Failed to fetch services";
+			const errorMessage =
+				error instanceof Error ? error.message : "Failed to fetch services";
 			dispatch({ type: "FETCH_FAILURE", payload: errorMessage });
 		}
 	}, []);
@@ -444,7 +454,10 @@ export function useAppProvider() {
 
 				// In dry-run mode, store the command and show it
 				if (dryRun && "command" in result) {
-					dispatch({ type: "SET_DRY_RUN_COMMAND", payload: result.command ?? null });
+					dispatch({
+						type: "SET_DRY_RUN_COMMAND",
+						payload: result.command ?? null,
+					});
 				}
 
 				dispatch({ type: "SET_ACTION_RESULT", payload: result });
@@ -489,7 +502,12 @@ export function useAppProvider() {
 				autoRefreshIntervalRef.current = null;
 			}
 		};
-	}, [state.autoRefresh.enabled, state.autoRefresh.intervalMs, state.offline.isOffline, silentRefresh]);
+	}, [
+		state.autoRefresh.enabled,
+		state.autoRefresh.intervalMs,
+		state.offline.isOffline,
+		silentRefresh,
+	]);
 
 	// Offline reconnect effect - periodically try to reconnect when offline
 	useEffect(() => {

@@ -1,6 +1,6 @@
 /**
  * Test fixtures for launchctl output parsing across macOS versions
- * 
+ *
  * These fixtures represent the various output formats observed across:
  * - macOS 10.14 Mojave
  * - macOS 10.15 Catalina

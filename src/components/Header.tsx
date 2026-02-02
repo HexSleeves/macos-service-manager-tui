@@ -82,9 +82,7 @@ export function Header() {
 			<box flexDirection="row" gap={3}>
 				{/* Show stale data indicator when offline */}
 				{isOffline && (
-					<text fg="#fbbf24">
-						⚠ Stale data (last: {lastRefreshText})
-					</text>
+					<text fg="#fbbf24">⚠ Stale data (last: {lastRefreshText})</text>
 				)}
 				<text fg="#9ca3af">
 					Services: <span fg="#e5e7eb">{filteredCount}</span>

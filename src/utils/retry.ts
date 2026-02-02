@@ -26,7 +26,7 @@ export interface RetryResult<T> {
 	retryErrors?: string[];
 }
 
-const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry'>> = {
+const DEFAULT_OPTIONS: Required<Omit<RetryOptions, "onRetry">> = {
 	maxRetries: 3,
 	initialDelayMs: 1000,
 	exponentialBackoff: true,
@@ -77,22 +77,22 @@ const PERMANENT_ERROR_PATTERNS = [
  * Determine if an error is transient and should be retried
  */
 export function isTransientError(error: Error | string): boolean {
-	const errorMessage = typeof error === 'string' ? error : error.message;
-	
+	const errorMessage = typeof error === "string" ? error : error.message;
+
 	// First check if it matches any permanent error patterns
 	for (const pattern of PERMANENT_ERROR_PATTERNS) {
 		if (pattern.test(errorMessage)) {
 			return false;
 		}
 	}
-	
+
 	// Then check if it matches transient error patterns
 	for (const pattern of TRANSIENT_ERROR_PATTERNS) {
 		if (pattern.test(errorMessage)) {
 			return true;
 		}
 	}
-	
+
 	// Default: don't retry unknown errors
 	return false;
 }
@@ -110,7 +110,7 @@ export function calculateDelay(
 		return Math.min(initialDelayMs, maxDelayMs);
 	}
 	// Exponential backoff: delay = initialDelay * 2^(attempt-1)
-	const delay = initialDelayMs * Math.pow(2, attempt - 1);
+	const delay = initialDelayMs * 2 ** (attempt - 1);
 	return Math.min(delay, maxDelayMs);
 }
 
@@ -118,12 +118,12 @@ export function calculateDelay(
  * Sleep for a given number of milliseconds
  */
 function sleep(ms: number): Promise<void> {
-	return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
  * Wrap an async operation with retry logic for transient failures
- * 
+ *
  * @param operation - The async operation to execute
  * @param options - Retry configuration options
  * @returns RetryResult containing the value and retry metadata
@@ -134,11 +134,17 @@ export async function withRetry<T>(
 	options: RetryOptions = {},
 ): Promise<RetryResult<T>> {
 	const opts = { ...DEFAULT_OPTIONS, ...options };
-	const { maxRetries, initialDelayMs, exponentialBackoff, maxDelayMs, onRetry } = opts;
-	
+	const {
+		maxRetries,
+		initialDelayMs,
+		exponentialBackoff,
+		maxDelayMs,
+		onRetry,
+	} = opts;
+
 	let lastError: Error | null = null;
 	const retryErrors: string[] = [];
-	
+
 	for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
 		try {
 			const value = await operation();
@@ -150,34 +156,39 @@ export async function withRetry<T>(
 			};
 		} catch (error) {
 			lastError = error instanceof Error ? error : new Error(String(error));
-			
+
 			// Check if this is the last attempt
 			if (attempt > maxRetries) {
 				break;
 			}
-			
+
 			// Check if error is transient and should be retried
 			if (!isTransientError(lastError)) {
 				// Permanent error, don't retry
 				break;
 			}
-			
+
 			// Record the retry error
 			retryErrors.push(lastError.message);
-			
+
 			// Calculate delay before next attempt
-			const delayMs = calculateDelay(attempt, initialDelayMs, exponentialBackoff, maxDelayMs);
-			
+			const delayMs = calculateDelay(
+				attempt,
+				initialDelayMs,
+				exponentialBackoff,
+				maxDelayMs,
+			);
+
 			// Call retry callback if provided
 			if (onRetry) {
 				onRetry(attempt, lastError, delayMs);
 			}
-			
+
 			// Wait before retrying
 			await sleep(delayMs);
 		}
 	}
-	
+
 	// All retries exhausted, throw the last error
 	throw lastError;
 }
@@ -185,7 +196,7 @@ export async function withRetry<T>(
 /**
  * Wrap an async operation that returns a result object (not throwing)
  * with retry logic. Useful for operations that return success/failure in the result.
- * 
+ *
  * @param operation - The async operation to execute
  * @param shouldRetry - Function to determine if the result should trigger a retry
  * @param options - Retry configuration options
@@ -197,16 +208,22 @@ export async function withRetryResult<T>(
 	options: RetryOptions = {},
 ): Promise<RetryResult<T>> {
 	const opts = { ...DEFAULT_OPTIONS, ...options };
-	const { maxRetries, initialDelayMs, exponentialBackoff, maxDelayMs, onRetry } = opts;
-	
+	const {
+		maxRetries,
+		initialDelayMs,
+		exponentialBackoff,
+		maxDelayMs,
+		onRetry,
+	} = opts;
+
 	let lastResult: T | null = null;
 	const retryErrors: string[] = [];
-	
+
 	for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
 		try {
 			const result = await operation();
 			lastResult = result;
-			
+
 			// Check if we should retry based on the result
 			if (!shouldRetry(result) || attempt > maxRetries) {
 				return {
@@ -216,37 +233,47 @@ export async function withRetryResult<T>(
 					retryErrors: retryErrors.length > 0 ? retryErrors : undefined,
 				};
 			}
-			
+
 			// Record that we're retrying
 			retryErrors.push(`Attempt ${attempt} failed, retrying...`);
-			
+
 			// Calculate delay before next attempt
-			const delayMs = calculateDelay(attempt, initialDelayMs, exponentialBackoff, maxDelayMs);
-			
+			const delayMs = calculateDelay(
+				attempt,
+				initialDelayMs,
+				exponentialBackoff,
+				maxDelayMs,
+			);
+
 			// Call retry callback if provided
 			if (onRetry) {
-				onRetry(attempt, new Error('Retry triggered by result check'), delayMs);
+				onRetry(attempt, new Error("Retry triggered by result check"), delayMs);
 			}
-			
+
 			// Wait before retrying
 			await sleep(delayMs);
 		} catch (error) {
 			// If the operation throws, wrap it and continue
 			const err = error instanceof Error ? error : new Error(String(error));
 			retryErrors.push(err.message);
-			
+
 			if (attempt > maxRetries || !isTransientError(err)) {
 				throw err;
 			}
-			
-			const delayMs = calculateDelay(attempt, initialDelayMs, exponentialBackoff, maxDelayMs);
+
+			const delayMs = calculateDelay(
+				attempt,
+				initialDelayMs,
+				exponentialBackoff,
+				maxDelayMs,
+			);
 			if (onRetry) {
 				onRetry(attempt, err, delayMs);
 			}
 			await sleep(delayMs);
 		}
 	}
-	
+
 	// Return the last result if we have one
 	if (lastResult !== null) {
 		return {
@@ -256,6 +283,6 @@ export async function withRetryResult<T>(
 			retryErrors: retryErrors.length > 0 ? retryErrors : undefined,
 		};
 	}
-	
-	throw new Error('Operation failed after all retries');
+
+	throw new Error("Operation failed after all retries");
 }
