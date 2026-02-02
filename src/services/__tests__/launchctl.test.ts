@@ -8,8 +8,8 @@ import {
 	parseLaunchctlPrint,
 	getMacOSVersion,
 	normalizePrintKey,
-	type MacOSVersion,
-} from "../launchctl";
+} from "../launchctl/index";
+import type { MacOSVersion } from "../launchctl/types";
 import {
 	LIST_STANDARD,
 	LIST_EXTRA_WHITESPACE,

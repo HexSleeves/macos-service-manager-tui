@@ -15,7 +15,7 @@ import { fuzzyMatchService } from "../utils/fuzzy";
 import {
 	executeServiceAction,
 	listServices as listLaunchServices,
-} from "./launchctl";
+} from "./launchctl/index";
 import { getMockServices } from "./mock";
 import { listSystemExtensions } from "./systemextensions";
 
@@ -242,7 +242,11 @@ export {
 	getCurrentUid,
 	requiresRoot,
 	shouldUseSudo,
-} from "./launchctl";
+	isValidServiceLabel,
+	getMacOSVersion,
+	parseLaunchctlList,
+	parseLaunchctlPrint,
+} from "./launchctl/index";
 export { listSystemExtensions } from "./systemextensions";
 export { readPlist, describePlistConfig } from "./plist";
 export type { PlistData, KeepAliveConfig, CalendarInterval } from "./plist";
