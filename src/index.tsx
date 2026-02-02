@@ -286,7 +286,7 @@ function AppContent() {
 			{state.showFilters && <FilterBar />}
 
 			{/* Main content area */}
-			<box flexDirection="row" flexGrow={1}>
+			<box flexDirection="row" flexGrow={1} overflow="hidden">
 				{/* Service List */}
 				<ServiceList />
 

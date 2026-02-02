@@ -15,7 +15,7 @@ import {
 // Fixed UI element heights
 const HEADER_HEIGHT = 3;
 const SEARCH_BAR_HEIGHT = 1;
-const FILTER_BAR_HEIGHT = 7; // 5 rows + padding
+const FILTER_BAR_HEIGHT = 8; // 6 rows (Type, Domain, Status, Show, Sort, blank) + 2 padding
 const FOOTER_HEIGHT = 3;
 const LIST_BORDER_HEIGHT = 2; // top + bottom border
 const LIST_HEADER_HEIGHT = 1;
