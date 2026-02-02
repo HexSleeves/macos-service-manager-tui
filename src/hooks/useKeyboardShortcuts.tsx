@@ -4,49 +4,33 @@
  */
 
 import { useKeyboard, useRenderer } from "@opentui/react";
-import type React from "react";
-import type { ActionResult, AppAction, AppState, Service, ServiceAction } from "../types";
+import { useAppStore } from "../store/useAppStore";
+import { useFilteredServices, useSelectedService } from "../store/useDerivedState";
+import type { ServiceAction } from "../types";
 
-interface UseKeyboardShortcutsProps {
-	state: AppState;
-	dispatch: React.Dispatch<AppAction>;
-	filteredServices: Service[];
-	selectedService: Service | null;
-	executeAction: (
-		action: ServiceAction,
-		service: Service,
-		options?: { dryRun?: boolean },
-	) => Promise<ActionResult>;
-	refresh: () => Promise<void>;
-}
-
-export function useKeyboardShortcuts({
-	state,
-	dispatch,
-	filteredServices,
-	selectedService,
-	executeAction,
-	refresh,
-}: UseKeyboardShortcutsProps) {
+export function useKeyboardShortcuts() {
 	const renderer = useRenderer();
+	const store = useAppStore();
+	const { filteredServices } = useFilteredServices();
+	const selectedService = useSelectedService(filteredServices);
 
 	useKeyboard((key) => {
 		// Block input while executing an action
-		if (state.executingAction) {
+		if (store.executingAction) {
 			return;
 		}
 
 		// Handle confirm dialog
-		if (state.showConfirm) {
+		if (store.showConfirm) {
 			if (key.name === "escape") {
-				dispatch({ type: "CANCEL_ACTION" });
+				store.cancelAction();
 				return;
 			}
 			if (key.name === "return" || key.name === "enter") {
-				dispatch({ type: "CONFIRM_ACTION" });
-				if (state.pendingAction && selectedService) {
-					executeAction(state.pendingAction, selectedService, {
-						dryRun: state.dryRun,
+				store.confirmAction();
+				if (store.pendingAction && selectedService) {
+					store.executeAction(store.pendingAction, selectedService, {
+						dryRun: store.dryRun,
 					});
 				}
 				return;
@@ -56,30 +40,30 @@ export function useKeyboardShortcuts({
 
 		// Help toggle
 		if (key.name === "?" || (key.shift && key.name === "/")) {
-			dispatch({ type: "TOGGLE_HELP" });
+			store.toggleHelp();
 			return;
 		}
 
 		// Close help
-		if (state.showHelp) {
+		if (store.showHelp) {
 			if (key.name === "escape" || key.name === "?") {
-				dispatch({ type: "TOGGLE_HELP" });
+				store.toggleHelp();
 			}
 			return;
 		}
 
 		// Search mode
-		if (state.focusedPanel === "search") {
+		if (store.focusedPanel === "search") {
 			if (key.name === "escape") {
-				if (state.searchQuery) {
-					dispatch({ type: "SET_SEARCH", payload: "" });
+				if (store.searchQuery) {
+					store.setSearch("");
 				} else {
-					dispatch({ type: "SET_FOCUS", payload: "list" });
+					store.setFocus("list");
 				}
 				return;
 			}
 			if (key.name === "return" || key.name === "enter") {
-				dispatch({ type: "SET_FOCUS", payload: "list" });
+				store.setFocus("list");
 				return;
 			}
 			// Let input handle other keys
@@ -96,134 +80,116 @@ export function useKeyboardShortcuts({
 
 		// Focus search
 		if (key.name === "/") {
-			dispatch({ type: "SET_FOCUS", payload: "search" });
+			store.setFocus("search");
 			return;
 		}
 
 		// Escape clears search or cancels
 		if (key.name === "escape") {
-			if (state.searchQuery) {
-				dispatch({ type: "SET_SEARCH", payload: "" });
+			if (store.searchQuery) {
+				store.setSearch("");
 			}
-			dispatch({ type: "SET_ACTION_RESULT", payload: null });
+			store.setActionResult(null);
 			return;
 		}
 
 		// Toggle filters
 		if (key.name === "f") {
-			dispatch({ type: "TOGGLE_FILTERS" });
+			store.toggleFilters();
 			return;
 		}
 
 		// Refresh
 		if (key.shift && key.name === "r") {
-			refresh();
+			store.refresh();
 			return;
 		}
 
 		// Navigation
 		if (key.name === "up" || key.name === "k") {
-			dispatch({ type: "SELECT_PREV" });
+			store.selectPrev();
 			return;
 		}
 		if (key.name === "down" || key.name === "j") {
 			const maxIndex = filteredServices.length - 1;
-			if (state.selectedIndex < maxIndex) {
-				dispatch({ type: "SELECT_NEXT" });
+			if (store.selectedIndex < maxIndex) {
+				store.selectNext();
 			}
 			return;
 		}
 		if (key.name === "g" && !key.shift) {
-			dispatch({ type: "SELECT_INDEX", payload: 0 });
+			store.selectIndex(0);
 			return;
 		}
 		if (key.shift && key.name === "g") {
-			dispatch({
-				type: "SELECT_INDEX",
-				payload: filteredServices.length - 1,
-			});
+			store.selectIndex(filteredServices.length - 1);
 			return;
 		}
 
 		// Page up/down
 		if (key.name === "pageup") {
-			dispatch({
-				type: "SELECT_INDEX",
-				payload: Math.max(0, state.selectedIndex - 10),
-			});
+			store.selectIndex(Math.max(0, store.selectedIndex - 10));
 			return;
 		}
 		if (key.name === "pagedown") {
-			dispatch({
-				type: "SELECT_INDEX",
-				payload: Math.min(filteredServices.length - 1, state.selectedIndex + 10),
-			});
+			store.selectIndex(Math.min(filteredServices.length - 1, store.selectedIndex + 10));
 			return;
 		}
 
 		// Sorting
 		if (key.name === "s" && !key.shift) {
-			dispatch({ type: "CYCLE_SORT_FIELD" });
+			store.cycleSortField();
 			return;
 		}
 		if (key.shift && key.name === "s") {
-			dispatch({ type: "TOGGLE_SORT_DIRECTION" });
+			store.toggleSortDirection();
 			return;
 		}
 
 		// Filter shortcuts
 		if (key.name === "1") {
-			dispatch({ type: "SET_FILTER", payload: { type: "all" } });
+			store.setFilter({ type: "all" });
 			return;
 		}
 		if (key.name === "2") {
-			dispatch({ type: "SET_FILTER", payload: { type: "LaunchDaemon" } });
+			store.setFilter({ type: "LaunchDaemon" });
 			return;
 		}
 		if (key.name === "3") {
-			dispatch({ type: "SET_FILTER", payload: { type: "LaunchAgent" } });
+			store.setFilter({ type: "LaunchAgent" });
 			return;
 		}
 		if (key.name === "4") {
-			dispatch({
-				type: "SET_FILTER",
-				payload: { type: "SystemExtension" },
-			});
+			store.setFilter({ type: "SystemExtension" });
 			return;
 		}
 		if (key.name === "a" && !key.shift) {
-			dispatch({
-				type: "SET_FILTER",
-				payload: { showAppleServices: !state.filter.showAppleServices },
-			});
+			store.setFilter({ showAppleServices: !store.filter.showAppleServices });
 			return;
 		}
 		// Toggle auto-refresh (Shift+A)
 		if (key.shift && key.name === "a") {
-			dispatch({ type: "TOGGLE_AUTO_REFRESH" });
+			store.toggleAutoRefresh();
 			return;
 		}
 
 		// Toggle dry-run mode (Shift+D)
 		if (key.shift && key.name === "d") {
-			dispatch({ type: "TOGGLE_DRY_RUN" });
+			store.toggleDryRun();
 			return;
 		}
 		if (key.name === "p") {
-			dispatch({
-				type: "SET_FILTER",
-				payload: { showProtected: !state.filter.showProtected },
-			});
+			store.setFilter({ showProtected: !store.filter.showProtected });
 			return;
 		}
 
 		// Domain filter cycling ([ key)
 		if (key.name === "[") {
 			const domains: Array<"all" | "system" | "user" | "gui"> = ["all", "system", "user", "gui"];
-			const currentIndex = domains.indexOf(state.filter.domain);
+			const currentIndex = domains.indexOf(store.filter.domain);
 			const nextDomain = domains[(currentIndex + 1) % domains.length];
 			if (nextDomain) {
-				dispatch({ type: "SET_FILTER", payload: { domain: nextDomain } });
+				store.setFilter({ domain: nextDomain });
 			}
 			return;
 		}
@@ -237,18 +203,18 @@ export function useKeyboardShortcuts({
 				"disabled",
 				"error",
 			];
-			const currentIndex = statuses.indexOf(state.filter.status);
+			const currentIndex = statuses.indexOf(store.filter.status);
 			const nextStatus = statuses[(currentIndex + 1) % statuses.length];
 			if (nextStatus) {
-				dispatch({ type: "SET_FILTER", payload: { status: nextStatus } });
+				store.setFilter({ status: nextStatus });
 			}
 			return;
 		}
 
 		// Tab to switch panels
 		if (key.name === "tab") {
-			const nextPanel: AppState["focusedPanel"] = state.focusedPanel === "list" ? "details" : "list";
-			dispatch({ type: "SET_FOCUS", payload: nextPanel });
+			const nextPanel = store.focusedPanel === "list" ? "details" : "list";
+			store.setFocus(nextPanel);
 			return;
 		}
 
@@ -256,29 +222,23 @@ export function useKeyboardShortcuts({
 		if (selectedService && selectedService.type !== "SystemExtension") {
 			const requestAction = (action: ServiceAction) => {
 				// Block actions when offline
-				if (state.offline.isOffline) {
-					dispatch({
-						type: "SET_ACTION_RESULT",
-						payload: {
-							success: false,
-							message: "Cannot perform action - offline mode",
-							error: "Connection to launchd unavailable. Waiting for reconnection...",
-						},
+				if (store.offline.isOffline) {
+					store.setActionResult({
+						success: false,
+						message: "Cannot perform action - offline mode",
+						error: "Connection to launchd unavailable. Waiting for reconnection...",
 					});
 					return;
 				}
 				if (selectedService.protection !== "normal") {
-					dispatch({
-						type: "SET_ACTION_RESULT",
-						payload: {
-							success: false,
-							message: "Cannot perform action on protected service",
-							sipProtected: true,
-						},
+					store.setActionResult({
+						success: false,
+						message: "Cannot perform action on protected service",
+						sipProtected: true,
 					});
 					return;
 				}
-				dispatch({ type: "REQUEST_ACTION", payload: action });
+				store.requestAction(action);
 			};
 
 			// Start (Enter when stopped)

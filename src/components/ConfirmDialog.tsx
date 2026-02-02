@@ -3,13 +3,19 @@
  * For confirming destructive actions
  */
 
-import { useAppState } from "../hooks/useAppState";
+import { useAppStore } from "../store/useAppStore";
+import { useFilteredServices, useSelectedService } from "../store/useDerivedState";
 
 export function ConfirmDialog() {
-	const { state, selectedService } = useAppState();
+	const { filteredServices } = useFilteredServices();
+	const selectedService = useSelectedService(filteredServices);
+	const executingAction = useAppStore((state) => state.executingAction);
+	const showConfirm = useAppStore((state) => state.showConfirm);
+	const pendingAction = useAppStore((state) => state.pendingAction);
+	const dryRun = useAppStore((state) => state.dryRun);
 
 	// Show executing overlay
-	if (state.executingAction && state.pendingAction && selectedService) {
+	if (executingAction && pendingAction && selectedService) {
 		return (
 			<box
 				position="absolute"
@@ -35,7 +41,7 @@ export function ConfirmDialog() {
 					</text>
 					<box marginTop={1}>
 						<text fg="#9ca3af">
-							{state.pendingAction} → {selectedService.label}
+							{pendingAction} → {selectedService.label}
 						</text>
 					</box>
 					<box marginTop={1}>
@@ -46,14 +52,14 @@ export function ConfirmDialog() {
 		);
 	}
 
-	if (!state.showConfirm || !state.pendingAction || !selectedService) {
+	if (!showConfirm || !pendingAction || !selectedService) {
 		return null;
 	}
 
-	const action = state.pendingAction;
+	const action = pendingAction;
 	const service = selectedService;
 	const isDestructive = ["stop", "unload", "disable"].includes(action);
-	const isDryRun = state.dryRun;
+	const isDryRun = dryRun;
 
 	// Determine border color: orange for dry-run, red for destructive, blue otherwise
 	const borderColor = isDryRun ? "#f97316" : isDestructive ? "#ef4444" : "#3b82f6";

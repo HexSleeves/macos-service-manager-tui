@@ -3,7 +3,8 @@
  * App title and status bar
  */
 
-import { useAppState } from "../hooks/useAppState";
+import { useAppStore } from "../store/useAppStore";
+import { useFilteredServices } from "../store/useDerivedState";
 
 /**
  * Format a date as relative time (e.g., "2 min ago")
@@ -25,17 +26,23 @@ function formatRelativeTime(date: Date): string {
 }
 
 export function Header() {
-	const { state, filteredServices } = useAppState();
+	const { filteredServices } = useFilteredServices();
+	const services = useAppStore((state) => state.services);
+	const autoRefresh = useAppStore((state) => state.autoRefresh);
+	const offline = useAppStore((state) => state.offline);
+	const dryRun = useAppStore((state) => state.dryRun);
+	const loading = useAppStore((state) => state.loading);
+	const searchQuery = useAppStore((state) => state.searchQuery);
 
-	const totalCount = state.services.length;
+	const totalCount = services.length;
 	const filteredCount = filteredServices.length;
 	const runningCount = filteredServices.filter((s) => s.status === "running").length;
 
 	// Format auto-refresh interval for display
-	const autoRefreshSeconds = Math.round(state.autoRefresh.intervalMs / 1000);
+	const autoRefreshSeconds = Math.round(autoRefresh.intervalMs / 1000);
 
 	// Offline state
-	const { isOffline, lastSuccessfulRefresh } = state.offline;
+	const { isOffline, lastSuccessfulRefresh } = offline;
 	const lastRefreshText = lastSuccessfulRefresh ? formatRelativeTime(lastSuccessfulRefresh) : "never";
 
 	return (
@@ -62,15 +69,15 @@ export function Header() {
 				) : (
 					<text fg="#22c55e">● Online</text>
 				)}
-				{state.dryRun && (
+				{dryRun && (
 					<box backgroundColor="#b45309" paddingLeft={1} paddingRight={1}>
 						<text fg="#ffffff">
 							<strong>🔍 DRY RUN</strong>
 						</text>
 					</box>
 				)}
-				{state.loading && <text fg="#fbbf24">Loading...</text>}
-				{state.autoRefresh.enabled && !state.loading && !isOffline && (
+				{loading && <text fg="#fbbf24">Loading...</text>}
+				{autoRefresh.enabled && !loading && !isOffline && (
 					<text fg="#22c55e">↻ Auto ({autoRefreshSeconds}s)</text>
 				)}
 			</box>
@@ -85,9 +92,9 @@ export function Header() {
 				<text fg="#9ca3af">
 					Running: <span fg="#22c55e">{runningCount}</span>
 				</text>
-				{state.searchQuery && (
+				{searchQuery && (
 					<text fg="#9ca3af">
-						Search: <span fg="#fbbf24">"{state.searchQuery}"</span>
+						Search: <span fg="#fbbf24">"{searchQuery}"</span>
 					</text>
 				)}
 			</box>

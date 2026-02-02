@@ -5,6 +5,7 @@
 
 import { createCliRenderer } from "@opentui/core";
 import { createRoot, useTerminalDimensions } from "@opentui/react";
+import { useEffect } from "react";
 
 import {
 	ConfirmDialog,
@@ -16,23 +17,26 @@ import {
 	ServiceDetails,
 	ServiceList,
 } from "./components";
-import { AppContext, useAppProvider, useAppState } from "./hooks/useAppState";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useAppEffects } from "./store/useAppEffects";
+import { useAppStore } from "./store/useAppStore";
 
-// Inner app component that uses context
-function AppContent() {
+// Main App component
+function App() {
 	const _terminalDimensions = useTerminalDimensions();
-	const { state, dispatch, filteredServices, selectedService, executeAction, refresh } = useAppState();
+	const showFilters = useAppStore((state) => state.showFilters);
+
+	// Initialize effects (auto-refresh, offline reconnect, metadata prefetch)
+	useAppEffects();
+
+	// Initial fetch on mount
+	const refresh = useAppStore((state) => state.refresh);
+	useEffect(() => {
+		refresh();
+	}, [refresh]);
 
 	// Keyboard handling via hook
-	useKeyboardShortcuts({
-		state,
-		dispatch,
-		filteredServices,
-		selectedService,
-		executeAction,
-		refresh,
-	});
+	useKeyboardShortcuts();
 
 	return (
 		<box flexDirection="column" width="100%" height="100%">
@@ -43,7 +47,7 @@ function AppContent() {
 			<SearchBar />
 
 			{/* Filter Bar (collapsible) */}
-			{state.showFilters && <FilterBar />}
+			{showFilters && <FilterBar />}
 
 			{/* Main content area */}
 			<box flexDirection="row" flexGrow={1} overflow="hidden">
@@ -61,17 +65,6 @@ function AppContent() {
 			<HelpPanel />
 			<ConfirmDialog />
 		</box>
-	);
-}
-
-// Main App wrapper with provider
-function App() {
-	const contextValue = useAppProvider();
-
-	return (
-		<AppContext.Provider value={contextValue}>
-			<AppContent />
-		</AppContext.Provider>
 	);
 }
 

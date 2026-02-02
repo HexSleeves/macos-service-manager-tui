@@ -4,7 +4,7 @@
  */
 
 import { useTerminalDimensions } from "@opentui/react";
-import { useAppState } from "../hooks/useAppState";
+import { useAppStore } from "../store/useAppStore";
 
 interface ShortcutGroup {
 	title: string;
@@ -61,10 +61,10 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 ];
 
 export function HelpPanel() {
-	const { state } = useAppState();
+	const showHelp = useAppStore((state) => state.showHelp);
 	const { height: terminalHeight } = useTerminalDimensions();
 
-	if (!state.showHelp) {
+	if (!showHelp) {
 		return null;
 	}
 

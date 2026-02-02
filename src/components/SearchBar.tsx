@@ -3,16 +3,18 @@
  * Search input for filtering services
  */
 
-import { useAppState } from "../hooks/useAppState";
+import { useAppStore } from "../store/useAppStore";
 
 export function SearchBar() {
-	const { state, dispatch } = useAppState();
+	const searchQuery = useAppStore((state) => state.searchQuery);
+	const focusedPanel = useAppStore((state) => state.focusedPanel);
+	const setSearch = useAppStore((state) => state.setSearch);
 
 	const handleChange = (value: string) => {
-		dispatch({ type: "SET_SEARCH", payload: value });
+		setSearch(value);
 	};
 
-	const isFocused = state.focusedPanel === "search";
+	const isFocused = focusedPanel === "search";
 
 	return (
 		<box
@@ -26,7 +28,7 @@ export function SearchBar() {
 		>
 			<text fg="#6b7280">🔍</text>
 			<input
-				value={state.searchQuery}
+				value={searchQuery}
 				onChange={handleChange}
 				placeholder="Search services... (press / to focus)"
 				focused={isFocused}
@@ -36,7 +38,7 @@ export function SearchBar() {
 				placeholderColor="#6b7280"
 				cursorColor="#60a5fa"
 			/>
-			{state.searchQuery && <text fg="#6b7280">[ESC] clear</text>}
+			{searchQuery && <text fg="#6b7280">[ESC] clear</text>}
 		</box>
 	);
 }

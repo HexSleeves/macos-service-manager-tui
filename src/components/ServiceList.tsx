@@ -19,7 +19,8 @@ import {
 	MIN_TERMINAL_WIDTH,
 	WIDE_TERMINAL_THRESHOLD,
 } from "../constants";
-import { useAppState } from "../hooks/useAppState";
+import { useAppStore } from "../store/useAppStore";
+import { useFilteredServices } from "../store/useDerivedState";
 import type { Service, ServiceMatchInfo } from "../types";
 import { getProtectionSymbol, getStatusColor, getStatusSymbol } from "./StatusIndicator";
 
@@ -230,7 +231,13 @@ function ServiceRow({ key, service, isSelected, index, layout, matchInfo, hasSea
 }
 
 export function ServiceList() {
-	const { state, filteredServices, serviceMatchInfo } = useAppState();
+	const { filteredServices, serviceMatchInfo } = useFilteredServices();
+	const selectedIndex = useAppStore((state) => state.selectedIndex);
+	const focusedPanel = useAppStore((state) => state.focusedPanel);
+	const sort = useAppStore((state) => state.sort);
+	const searchQuery = useAppStore((state) => state.searchQuery);
+	const loading = useAppStore((state) => state.loading);
+	const showFilters = useAppStore((state) => state.showFilters);
 	const { height: terminalHeight, width: terminalWidth } = useTerminalDimensions();
 
 	// Calculate column layout based on terminal width
@@ -238,7 +245,7 @@ export function ServiceList() {
 
 	// Calculate visible rows based on terminal height
 	// Account for filter bar when visible - use compact height on small terminals
-	const filterBarHeight = state.showFilters
+	const filterBarHeight = showFilters
 		? terminalHeight < 25
 			? 6 // Compact mode: reduced padding/gaps
 			: FILTER_BAR_HEIGHT
@@ -253,7 +260,7 @@ export function ServiceList() {
 	if (totalItems > visibleRows) {
 		// Try to keep selected item centered
 		const halfVisible = Math.floor(visibleRows / 2);
-		startIndex = Math.max(0, state.selectedIndex - halfVisible);
+		startIndex = Math.max(0, selectedIndex - halfVisible);
 		// Adjust if we're near the end
 		if (startIndex + visibleRows > totalItems) {
 			startIndex = Math.max(0, totalItems - visibleRows);
@@ -278,8 +285,8 @@ export function ServiceList() {
 	if (filteredServices.length === 0) {
 		return (
 			<box flexGrow={1} justifyContent="center" alignItems="center" border borderColor={COLORS.bgTertiary}>
-				<text fg={COLORS.textMuted}>{state.loading ? "Loading services..." : "No services found"}</text>
-				{state.searchQuery && <text fg={COLORS.textMuted}>Try adjusting your search or filters</text>}
+				<text fg={COLORS.textMuted}>{loading ? "Loading services..." : "No services found"}</text>
+				{searchQuery && <text fg={COLORS.textMuted}>Try adjusting your search or filters</text>}
 			</box>
 		);
 	}
@@ -289,7 +296,7 @@ export function ServiceList() {
 			flexDirection="column"
 			flexGrow={1}
 			border
-			borderColor={state.focusedPanel === "list" ? COLORS.bgFocus : COLORS.bgTertiary}
+			borderColor={focusedPanel === "list" ? COLORS.bgFocus : COLORS.bgTertiary}
 		>
 			{/* List header */}
 			<box
@@ -299,7 +306,7 @@ export function ServiceList() {
 				paddingRight={1}
 				height={1}
 			>
-				{state.focusedPanel === "list" && <text fg={COLORS.bgFocus}>▶ </text>}
+				{focusedPanel === "list" && <text fg={COLORS.bgFocus}>▶ </text>}
 				<box width={COL_STATUS}>
 					<text fg={COLORS.textTertiary}>S</text>
 				</box>
@@ -324,8 +331,8 @@ export function ServiceList() {
 				<box width={layout.labelWidth}>
 					<text fg={COLORS.textTertiary}>
 						Label
-						{state.sort.field === "label" && (
-							<span fg={COLORS.textAccent}> {state.sort.direction === "asc" ? "▲" : "▼"}</span>
+						{sort.field === "label" && (
+							<span fg={COLORS.textAccent}> {sort.direction === "asc" ? "▲" : "▼"}</span>
 						)}
 					</text>
 				</box>
@@ -353,11 +360,11 @@ export function ServiceList() {
 								// biome-ignore lint/suspicious/noArrayIndexKey: position-based keys required for virtual scrolling
 								key={`row-${i}`}
 								service={service}
-								isSelected={startIndex + i === state.selectedIndex}
+								isSelected={startIndex + i === selectedIndex}
 								index={startIndex + i}
 								layout={layout}
 								matchInfo={matchInfo}
-								hasSearchQuery={!!state.searchQuery}
+								hasSearchQuery={!!searchQuery}
 							/>
 						);
 					}
@@ -386,7 +393,7 @@ export function ServiceList() {
 				height={1}
 			>
 				<text fg={COLORS.textMuted}>
-					{state.selectedIndex + 1} / {filteredServices.length}
+					{selectedIndex + 1} / {filteredServices.length}
 				</text>
 				<text fg="#6b7280">
 					{startIndex > 0 && "▲ "}

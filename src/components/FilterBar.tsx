@@ -4,7 +4,7 @@
  */
 
 import { useTerminalDimensions } from "@opentui/react";
-import { useAppState } from "../hooks/useAppState";
+import { useAppStore } from "../store/useAppStore";
 
 // Shared layout constants for consistent alignment
 const LABEL_WIDTH = 8;
@@ -74,8 +74,8 @@ function TogglePill({ label, active, shortcut }: TogglePillProps) {
 }
 
 export function FilterBar() {
-	const { state } = useAppState();
-	const { filter, sort } = state;
+	const filter = useAppStore((state) => state.filter);
+	const sort = useAppStore((state) => state.sort);
 	const { height: terminalHeight } = useTerminalDimensions();
 
 	// Use compact layout on small terminals (< 25 rows)

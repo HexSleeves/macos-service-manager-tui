@@ -3,7 +3,8 @@
  * Shows detailed information about the selected service
  */
 
-import { useAppState } from "../hooks/useAppState";
+import { useAppStore } from "../store/useAppStore";
+import { useFilteredServices, useSelectedService } from "../store/useDerivedState";
 import type { SystemExtension } from "../types";
 import { StatusIndicator } from "./StatusIndicator";
 
@@ -50,7 +51,11 @@ function ActionButton({
 }
 
 export function ServiceDetails() {
-	const { state, selectedService, getMetadataLoadingState } = useAppState();
+	const { filteredServices } = useFilteredServices();
+	const selectedService = useSelectedService(filteredServices);
+	const focusedPanel = useAppStore((state) => state.focusedPanel);
+	const offline = useAppStore((state) => state.offline);
+	const metadataLoading = useAppStore((state) => state.metadataLoading);
 
 	if (!selectedService) {
 		return (
@@ -64,10 +69,10 @@ export function ServiceDetails() {
 	const isProtected = service.protection !== "normal";
 	const isRunning = service.status === "running";
 	const isSystemExt = service.type === "SystemExtension";
-	const isOffline = state.offline.isOffline;
+	const isOffline = offline.isOffline;
 
 	// Check if metadata is loading
-	const metadataState = getMetadataLoadingState(service.id);
+	const metadataState = metadataLoading.get(service.id);
 	const isLoadingMetadata = metadataState?.loading ?? false;
 	const metadataError = metadataState?.error;
 
@@ -78,13 +83,13 @@ export function ServiceDetails() {
 		<box
 			width={45}
 			border
-			borderColor={state.focusedPanel === "details" ? "#3b82f6" : "#374151"}
+			borderColor={focusedPanel === "details" ? "#3b82f6" : "#374151"}
 			flexDirection="column"
 		>
 			{/* Header */}
 			<box backgroundColor="#1e3a5f" paddingLeft={1} paddingRight={1} height={1}>
 				<text fg="#60a5fa">
-					{state.focusedPanel === "details" && <span fg="#3b82f6">▶ </span>}
+					{focusedPanel === "details" && <span fg="#3b82f6">▶ </span>}
 					<strong>Service Details</strong>
 				</text>
 			</box>

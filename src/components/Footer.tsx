@@ -3,10 +3,13 @@
  * Keyboard shortcuts and status messages
  */
 
-import { useAppState } from "../hooks/useAppState";
+import { useAppStore } from "../store/useAppStore";
 
 export function Footer() {
-	const { state } = useAppState();
+	const dryRun = useAppStore((state) => state.dryRun);
+	const lastActionResult = useAppStore((state) => state.lastActionResult);
+	const loading = useAppStore((state) => state.loading);
+	const executingAction = useAppStore((state) => state.executingAction);
 
 	const shortcuts = [
 		{ key: "↑↓/jk", action: "Navigate" },
@@ -14,26 +17,26 @@ export function Footer() {
 		{ key: "f", action: "Filter" },
 		{
 			key: "D",
-			action: state.dryRun ? "Dry ✓" : "Dry",
-			highlight: state.dryRun,
+			action: dryRun ? "Dry ✓" : "Dry",
+			highlight: dryRun,
 		},
 		{ key: "?", action: "Help" },
 		{ key: "q", action: "Quit" },
 	];
 
-	const showMessage = state.lastActionResult || state.loading || state.executingAction;
+	const showMessage = lastActionResult || loading || executingAction;
 
 	return (
 		<box flexDirection="column" height={3} backgroundColor="#1f2937">
 			{/* Status message row */}
 			{showMessage && (
 				<box paddingLeft={1} height={1} flexDirection="row" gap={1}>
-					{state.executingAction && <text fg="#60a5fa">⏳ Executing action...</text>}
-					{state.loading && !state.executingAction && <text fg="#60a5fa">↻ Loading services...</text>}
-					{state.lastActionResult && !state.executingAction && !state.loading && (
-						<text fg={state.lastActionResult.success ? "#22c55e" : "#ef4444"}>
-							{state.lastActionResult.success ? "✓" : "✗"} {state.lastActionResult.message}
-							{state.lastActionResult.error && ` - ${state.lastActionResult.error}`}
+					{executingAction && <text fg="#60a5fa">⏳ Executing action...</text>}
+					{loading && !executingAction && <text fg="#60a5fa">↻ Loading services...</text>}
+					{lastActionResult && !executingAction && !loading && (
+						<text fg={lastActionResult.success ? "#22c55e" : "#ef4444"}>
+							{lastActionResult.success ? "✓" : "✗"} {lastActionResult.message}
+							{lastActionResult.error && ` - ${lastActionResult.error}`}
 						</text>
 					)}
 				</box>
