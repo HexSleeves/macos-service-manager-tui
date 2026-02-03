@@ -75,7 +75,7 @@ export function useKeyboardShortcuts() {
 		// Quit
 		if (key.name === "q" || (key.ctrl && key.name === "c")) {
 			renderer.destroy();
-			return;
+			process.exit(0);
 		}
 
 		// Focus search
