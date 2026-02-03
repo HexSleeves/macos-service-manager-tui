@@ -51,11 +51,14 @@ The application is **fully functional** with ~6,500 lines of TypeScript. Core fe
 
 | Task | Description | Effort |
 |------|-------------|--------|
+| **Open plist in editor** | Press `e` to edit plist file in $EDITOR | 4-5 hrs |
 | Service log viewer | Show logs via `log show --predicate` | 2-3 hrs |
 | Favorites/bookmarks | Pin frequently managed services | 2 hrs |
 | Mouse support | Click to select, scroll wheel | 2-3 hrs |
 | Batch operations | Select multiple services, action on all | 3-4 hrs |
 | History | Track actions performed with timestamps | 2 hrs |
+
+**Open plist in editor** - See [docs/open-plist-editor.md](open-plist-editor.md) for implementation plan.
 
 ## Medium Priority - UI
 

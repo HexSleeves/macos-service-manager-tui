@@ -225,6 +225,7 @@ Mapped to launchctl commands:
 - `r` - Reload service
 - `d` - Toggle enable/disable
 - `u` - Unload service
+- `e` - Edit plist file in $EDITOR (planned)
 - `R` - Refresh service list
 
 ### General
