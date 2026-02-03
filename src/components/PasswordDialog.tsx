@@ -4,40 +4,12 @@
  */
 
 import { useAppStore } from "../store/useAppStore";
-import type { Service, ServiceAction } from "../types";
-
-// Type for the pending privileged action
-// This will be stored in the app store
-export interface PendingPrivilegedAction {
-	action: ServiceAction;
-	service: Service;
-}
 
 export function PasswordDialog() {
-	// TODO: These selectors will be added to the store later
-	// For now, use placeholder selectors that return default values
-	// Using 'unknown' intermediate cast to handle store fields that don't exist yet
-	const showPasswordDialog =
-		useAppStore(
-			(state) => (state as unknown as Record<string, unknown>).showPasswordDialog as boolean | undefined,
-		) ?? false;
-	const passwordDialogError =
-		useAppStore(
-			(state) =>
-				(state as unknown as Record<string, unknown>).passwordDialogError as string | null | undefined,
-		) ?? null;
-	const pendingPrivilegedAction =
-		useAppStore(
-			(state) =>
-				(state as unknown as Record<string, unknown>).pendingPrivilegedAction as
-					| PendingPrivilegedAction
-					| null
-					| undefined,
-		) ?? null;
-	const passwordInput =
-		useAppStore(
-			(state) => (state as unknown as Record<string, unknown>).passwordInput as string | undefined,
-		) ?? "";
+	const showPasswordDialog = useAppStore((state) => state.showPasswordDialog);
+	const passwordDialogError = useAppStore((state) => state.passwordDialogError);
+	const pendingPrivilegedAction = useAppStore((state) => state.pendingPrivilegedAction);
+	const passwordInput = useAppStore((state) => state.passwordInput);
 
 	// Render nothing if not visible
 	if (!showPasswordDialog) {

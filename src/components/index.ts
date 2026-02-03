@@ -7,7 +7,7 @@ export { FilterBar } from "./FilterBar";
 export { Footer } from "./Footer";
 export { Header } from "./Header";
 export { HelpPanel } from "./HelpPanel";
-export { PasswordDialog, type PendingPrivilegedAction } from "./PasswordDialog";
+export { PasswordDialog } from "./PasswordDialog";
 export { SearchBar } from "./SearchBar";
 export { ServiceDetails } from "./ServiceDetails";
 export { ServiceList } from "./ServiceList";
