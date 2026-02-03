@@ -20,6 +20,30 @@ export function useKeyboardShortcuts() {
 			return;
 		}
 
+		// Handle password dialog
+		if (store.showPasswordDialog) {
+			if (key.name === "escape") {
+				store.hidePasswordDialog();
+				return;
+			}
+			if (key.name === "return" || key.name === "enter") {
+				if (store.passwordInput) {
+					store.submitPassword();
+				}
+				return;
+			}
+			if (key.name === "backspace") {
+				store.setPasswordInput(store.passwordInput.slice(0, -1));
+				return;
+			}
+			// Regular character input
+			if (key.name && key.name.length === 1 && !key.ctrl && !key.meta) {
+				store.setPasswordInput(store.passwordInput + key.name);
+				return;
+			}
+			return; // Block other keys while dialog is open
+		}
+
 		// Handle confirm dialog
 		if (store.showConfirm) {
 			if (key.name === "escape") {

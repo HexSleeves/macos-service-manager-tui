@@ -2,7 +2,7 @@
  * Initial application state
  */
 
-import type { AppState, OfflineState } from "../types";
+import type { AppState, OfflineState, PendingPrivilegedAction } from "../types";
 import { DEFAULT_AUTO_REFRESH_INTERVAL } from "./constants";
 
 const initialOfflineState: OfflineState = {
@@ -46,4 +46,8 @@ export const initialState: AppState = {
 	offline: initialOfflineState,
 	serviceMetadata: new Map(),
 	metadataLoading: new Map(),
+	showPasswordDialog: false,
+	passwordDialogError: null as string | null,
+	pendingPrivilegedAction: null as PendingPrivilegedAction | null,
+	passwordInput: "",
 };

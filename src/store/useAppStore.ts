@@ -5,6 +5,7 @@
 
 import { create } from "zustand";
 import { fetchAllServices, getNextSortField, performServiceAction } from "../services";
+import { executePrivileged, isGuiContext, isSudoCached } from "../services/launchctl/sudo";
 import type { ActionResult, AppState, Service, ServiceAction } from "../types";
 import { MAX_METADATA_CACHE_SIZE, OFFLINE_THRESHOLD } from "./constants";
 import { initialState } from "./initialState";
@@ -81,6 +82,13 @@ interface AppStoreActions {
 	setServiceMetadata: (serviceId: string, metadata: Partial<Service>) => void;
 	setMetadataLoading: (serviceId: string, loading: boolean, error?: string | null) => void;
 	clearMetadataCache: () => void;
+
+	// Password dialog actions
+	showPasswordPrompt: (action: ServiceAction, service: Service) => void;
+	hidePasswordDialog: () => void;
+	setPasswordInput: (password: string) => void;
+	setPasswordError: (error: string | null) => void;
+	submitPassword: () => Promise<void>;
 }
 
 /**
@@ -210,6 +218,22 @@ export const useAppStore = create<AppStoreState & AppStoreActions>((set, get) =>
 	// Service actions
 	executeAction: async (action, service, options = {}) => {
 		const { dryRun = false } = options;
+
+		// Check if privilege escalation is needed for root-requiring services
+		if (service.requiresRoot && !dryRun) {
+			const sudoCached = await isSudoCached();
+			if (!sudoCached && !isGuiContext()) {
+				// SSH/headless context without cached sudo - show password prompt
+				get().showPasswordPrompt(action, service);
+				return {
+					success: false,
+					message: "Password required for privileged operation",
+					requiresRoot: true,
+				};
+			}
+			// GUI context: proceed - osascript will show native dialog
+		}
+
 		get().setExecuting(true);
 		try {
 			const result = await performServiceAction(action, service, { dryRun });
@@ -351,4 +375,104 @@ export const useAppStore = create<AppStoreState & AppStoreActions>((set, get) =>
 			serviceMetadata: new Map(),
 			metadataLoading: new Map(),
 		}),
+
+	// Password dialog actions
+	showPasswordPrompt: (action, service) =>
+		set({
+			showPasswordDialog: true,
+			pendingPrivilegedAction: { action, service },
+			passwordDialogError: null,
+			passwordInput: "",
+		}),
+
+	hidePasswordDialog: () =>
+		set({
+			showPasswordDialog: false,
+			pendingPrivilegedAction: null,
+			passwordInput: "",
+			passwordDialogError: null,
+		}),
+
+	setPasswordInput: (password) => set({ passwordInput: password }),
+
+	setPasswordError: (error) => set({ passwordDialogError: error }),
+
+	submitPassword: async () => {
+		const state = get();
+		const { pendingPrivilegedAction, passwordInput } = state;
+
+		if (!pendingPrivilegedAction) {
+			return;
+		}
+
+		const { action, service } = pendingPrivilegedAction;
+
+		// Build the command for the privileged action
+		const command = buildPrivilegedCommand(action, service);
+
+		const result = await executePrivileged(command, passwordInput);
+
+		if (result.authFailed) {
+			// Wrong password - keep dialog open with error
+			set({ passwordDialogError: "Incorrect password. Please try again." });
+			return;
+		}
+
+		if (result.authCancelled) {
+			// User cancelled - hide dialog
+			get().hidePasswordDialog();
+			return;
+		}
+
+		// Success or other error - hide dialog and set result
+		get().hidePasswordDialog();
+
+		const actionResult: ActionResult = {
+			success: result.success,
+			message: result.success
+				? `Successfully executed ${action} on ${service.label}`
+				: `Failed to ${action} ${service.label}`,
+			error: result.success ? undefined : result.stderr,
+		};
+
+		get().setActionResult(actionResult);
+
+		// Refresh services if successful
+		if (result.success) {
+			await get().refresh();
+		}
+	},
 }));
+
+/**
+ * Build the launchctl command for a privileged action
+ */
+function buildPrivilegedCommand(action: ServiceAction, service: Service): string[] {
+	const target =
+		service.domain === "system"
+			? `system/${service.label}`
+			: `gui/${process.getuid?.() ?? 501}/${service.label}`;
+
+	switch (action) {
+		case "start":
+			return ["launchctl", "kickstart", "-k", target];
+		case "stop":
+			return ["launchctl", "kill", "SIGTERM", target];
+		case "enable":
+			return ["launchctl", "enable", target];
+		case "disable":
+			return ["launchctl", "disable", target];
+		case "unload":
+			if (service.plistPath) {
+				return ["launchctl", "bootout", target.split("/")[0] ?? "system", service.plistPath];
+			}
+			return ["launchctl", "bootout", target];
+		case "reload":
+			if (service.plistPath) {
+				return ["launchctl", "kickstart", "-k", target];
+			}
+			return ["launchctl", "kickstart", "-k", target];
+		default:
+			return ["launchctl", "print", target];
+	}
+}

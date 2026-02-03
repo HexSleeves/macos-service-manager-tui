@@ -26,6 +26,7 @@ import {
 	requiresRoot,
 	shouldUseSudo,
 } from "./permissions";
+import { executePrivileged } from "./sudo";
 import type { MacOSVersion, ParsedListEntry } from "./types";
 import { PLIST_DIRECTORIES } from "./types";
 import { isValidServiceLabel, validateLabel } from "./validation";
@@ -304,6 +305,7 @@ export async function getServiceInfo(
 
 export interface ExecuteServiceActionOptions {
 	dryRun?: boolean;
+	password?: string;
 }
 
 export interface DryRunResult extends ActionResult {
@@ -373,11 +375,8 @@ export async function executeServiceAction(
 			};
 	}
 
-	if (shouldUseSudo(service.requiresRoot)) {
-		command = ["sudo", ...command];
-	}
-
-	const commandString = command.join(" ");
+	const needsSudo = shouldUseSudo(service.requiresRoot);
+	const commandString = needsSudo ? `sudo ${command.join(" ")}` : command.join(" ");
 
 	if (dryRun) {
 		return {
@@ -387,6 +386,51 @@ export async function executeServiceAction(
 		};
 	}
 
+	// Execute with privilege escalation if needed
+	if (needsSudo) {
+		const result = await executePrivileged(command, options.password);
+
+		if (result.needsPassword) {
+			return {
+				success: false,
+				message: "Administrator password required",
+				error: "NEEDS_PASSWORD",
+			};
+		}
+
+		if (result.authCancelled) {
+			return {
+				success: false,
+				message: "Authentication cancelled",
+			};
+		}
+
+		if (result.authFailed) {
+			return {
+				success: false,
+				message: "Authentication failed",
+				error: "AUTH_FAILED",
+			};
+		}
+
+		if (result.success) {
+			return {
+				success: true,
+				message: `Successfully ${action}ed service: ${service.label}`,
+			};
+		}
+
+		// Privileged execution failed
+		const errorInfo = parseErrorMessage(result.stderr, result.exitCode);
+		return {
+			success: false,
+			message: `Failed to ${action} service`,
+			error: errorInfo.message,
+			sipProtected: errorInfo.sipProtected,
+		};
+	}
+
+	// Non-privileged execution
 	const [cmd, ...args] = command;
 	const result = await execCommandWithRetry(cmd as string, args);
 

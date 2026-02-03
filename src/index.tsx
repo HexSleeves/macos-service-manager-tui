@@ -13,6 +13,7 @@ import {
 	Footer,
 	Header,
 	HelpPanel,
+	PasswordDialog,
 	SearchBar,
 	ServiceDetails,
 	ServiceList,
@@ -64,6 +65,7 @@ function App() {
 			{/* Overlays */}
 			<HelpPanel />
 			<ConfirmDialog />
+			<PasswordDialog />
 		</box>
 	);
 }

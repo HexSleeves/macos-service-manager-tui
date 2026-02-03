@@ -149,6 +149,17 @@ export interface AppState {
 	serviceMetadata: Map<string, Partial<Service>>;
 	// Metadata loading states: map of service ID -> loading state
 	metadataLoading: Map<string, ServiceMetadataState>;
+	// Password dialog state
+	showPasswordDialog: boolean;
+	passwordDialogError: string | null;
+	pendingPrivilegedAction: PendingPrivilegedAction | null;
+	passwordInput: string;
+}
+
+// Pending privileged action (waiting for password)
+export interface PendingPrivilegedAction {
+	action: ServiceAction;
+	service: Service;
 }
 
 // Match metadata for fuzzy search highlighting
