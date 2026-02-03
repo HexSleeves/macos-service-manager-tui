@@ -9,6 +9,7 @@ Built with [OpenTUI](https://github.com/anomalyco/opentui) and React.
 ## Features
 
 ### Service Discovery
+
 - List all LaunchDaemons, LaunchAgents, and System Extensions
 - Clear distinction between:
   - User-level vs system-level services
@@ -23,6 +24,7 @@ Built with [OpenTUI](https://github.com/anomalyco/opentui) and React.
   - Plist path
 
 ### Service Management
+
 - **Start** stopped services
 - **Stop** running services
 - **Enable/Disable** services
@@ -34,6 +36,7 @@ Built with [OpenTUI](https://github.com/anomalyco/opentui) and React.
 - Graceful handling of restricted or immutable services
 
 ### UI/UX Features
+
 - Fully keyboard-driven navigation
 - Real-time search filtering
 - Multiple filter options:
@@ -55,6 +58,7 @@ Built with [OpenTUI](https://github.com/anomalyco/opentui) and React.
 ## Installation
 
 ### Prerequisites
+
 - [Bun](https://bun.sh/) runtime (v1.0 or later)
 - macOS 11+ (Big Sur or later)
 
@@ -77,8 +81,9 @@ bun run src/index.tsx
 ### Keyboard Shortcuts
 
 #### Navigation
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `↑` / `k` | Move selection up |
 | `↓` / `j` | Move selection down |
 | `g` | Go to first service |
@@ -87,8 +92,9 @@ bun run src/index.tsx
 | `Tab` | Switch panel focus |
 
 #### Search & Filter
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `/` | Focus search |
 | `Esc` | Clear search / Cancel |
 | `f` | Toggle filter panel |
@@ -97,14 +103,16 @@ bun run src/index.tsx
 | `p` | Toggle protected services visibility |
 
 #### Sorting
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `s` | Cycle sort field |
 | `S` | Toggle sort direction |
 
 #### Service Actions
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `Enter` | Start service (if stopped) |
 | `x` | Stop service |
 | `r` | Reload service |
@@ -112,15 +120,16 @@ bun run src/index.tsx
 | `u` | Unload service |
 
 #### General
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `R` | Refresh service list |
 | `?` | Toggle help panel |
 | `q` / `Ctrl+C` | Quit |
 
 ## Architecture
 
-```
+```bash
 src/
 ├── index.tsx           # Main app entry point
 ├── types/
@@ -150,6 +159,7 @@ src/
 ### Command Execution
 
 The app uses modern `launchctl` commands:
+
 - `launchctl print <domain>` - List services
 - `launchctl print <domain>/<label>` - Get service details
 - `launchctl kickstart -k <target>` - Start service
@@ -159,6 +169,7 @@ The app uses modern `launchctl` commands:
 - `launchctl bootout <target>` - Unload service
 
 For system extensions:
+
 - `systemextensionsctl list` - List all extensions
 
 ### Security Considerations
