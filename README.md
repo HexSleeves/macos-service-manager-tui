@@ -1,232 +1,252 @@
 # macOS Service Manager TUI
 
-A **Terminal User Interface (TUI)** for inspecting and managing macOS system services, including LaunchDaemons, LaunchAgents, and System Extensions.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Built with Bun](https://img.shields.io/badge/Built%20with-Bun-f9f1e1.svg)](https://bun.sh)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 
-Built with [OpenTUI](https://github.com/anomalyco/opentui) and React.
+A powerful **Terminal User Interface (TUI)** for inspecting and managing macOS system services, including LaunchDaemons, LaunchAgents, and System Extensions.
 
-![macOS Service Manager Screenshot](docs/screenshot.png)
+Built with [OpenTUI](https://github.com/anomalyco/opentui), [React](https://react.dev/), and [Zustand](https://zustand-demo.pmnd.rs/).
 
-## Features
+<p align="center">
+  <img src="docs/screenshot.png" alt="macOS Service Manager Screenshot" width="800">
+</p>
 
-### Service Discovery
+## ✨ Features
 
-- List all LaunchDaemons, LaunchAgents, and System Extensions
-- Clear distinction between:
-  - User-level vs system-level services
-  - Loaded vs unloaded services
-  - Enabled vs disabled services
-- Service metadata display:
-  - Label
-  - PID (if running)
-  - Status
-  - Domain (user/system)
-  - Exit status
-  - Plist path
+### 🔍 Service Discovery
+- **Comprehensive listing** of all LaunchDaemons, LaunchAgents, and System Extensions
+- **Smart categorization** by type, domain (system/user/gui), and status
+- **Rich metadata** including PID, exit status, plist path, and descriptions
+- **Automatic detection** of Apple/macOS services vs third-party services
 
-### Service Management
+### ⚡ Service Management
+- **Start/Stop** services with a single keypress
+- **Enable/Disable** services to control auto-start behavior
+- **Reload** running services to pick up configuration changes
+- **Unload** services completely from launchd
+- **Dry-run mode** to preview commands before execution
+- **Smart privilege handling** with sudo when required
 
-- **Start** stopped services
-- **Stop** running services
-- **Enable/Disable** services
-- **Reload** services
-- **Unload** services
-- Clear indication when:
-  - Root privileges are required
-  - Services are protected by SIP
-- Graceful handling of restricted or immutable services
+### 🎨 Modern UI/UX
+- **Vim-style navigation** (`j`/`k`, `g`/`G`)
+- **Fuzzy search** with match highlighting
+- **Collapsible filter bar** with multiple criteria
+- **Real-time status updates** with auto-refresh
+- **Responsive layout** adapts to terminal size
+- **Visual status indicators**:
+  - `●` Running (green)
+  - `○` Stopped (gray)
+  - `◌` Disabled (yellow)
+  - `✕` Error (red)
+  - `🔒` SIP-protected
+  - `🛡` Immutable
+  - `⚙` System-owned
 
-### UI/UX Features
+### 🛡️ Safety First
+- **Confirmation prompts** for destructive actions
+- **Clear protection indicators** for SIP and immutable services
+- **Offline mode** with graceful degradation
+- **Command validation** to prevent injection attacks
 
-- Fully keyboard-driven navigation
-- Real-time search filtering
-- Multiple filter options:
-  - By type (Daemon/Agent/Extension)
-  - By domain (System/User)
-  - By status (Running/Stopped/Error)
-  - Show/hide Apple services
-  - Show/hide protected services
-- Sort by label, status, type, domain, or PID
-- Visual indicators for:
-  - Running (● green)
-  - Stopped (○ gray)
-  - Disabled (◌ yellow)
-  - Error (✕ red)
-  - Protected (🔒 SIP, 🛡 immutable, ⚙ system-owned)
-- Confirmation prompts for destructive actions
-- Help panel with keyboard shortcuts
-
-## Installation
+## 📦 Installation
 
 ### Prerequisites
-
-- [Bun](https://bun.sh/) runtime (v1.0 or later)
+- [Bun](https://bun.sh/) v1.0 or later
 - macOS 11+ (Big Sur or later)
 
-### Setup
+### Quick Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/macos-service-manager
-cd macos-service-manager
+git clone https://github.com/HexSleeves/macos-service-manager-tui.git
+cd macos-service-manager-tui
 
 # Install dependencies
 bun install
 
 # Run the application
-bun run src/index.tsx
+bun run dev
 ```
 
-## Usage
+### One-liner
 
-### Keyboard Shortcuts
+```bash
+bunx macos-service-manager  # Coming soon to npm!
+```
 
-#### Navigation
+## ⌨️ Keyboard Shortcuts
 
+### Navigation
 | Key | Action |
-| --- | ------ |
+|-----|--------|
 | `↑` / `k` | Move selection up |
 | `↓` / `j` | Move selection down |
 | `g` | Go to first service |
 | `G` | Go to last service |
-| `PgUp/PgDn` | Page up/down |
+| `PgUp` / `PgDn` | Page up/down |
 | `Tab` | Switch panel focus |
 
-#### Search & Filter
-
+### Search & Filter
 | Key | Action |
-| --- | ------ |
+|-----|--------|
 | `/` | Focus search |
 | `Esc` | Clear search / Cancel |
 | `f` | Toggle filter panel |
 | `1-4` | Filter by type (All/Daemon/Agent/Extension) |
+| `[` | Cycle domain filter (All/System/User/GUI) |
+| `]` | Cycle status filter (All/Running/Stopped/Disabled/Error) |
 | `a` | Toggle Apple services visibility |
 | `p` | Toggle protected services visibility |
 
-#### Sorting
-
+### Sorting
 | Key | Action |
-| --- | ------ |
-| `s` | Cycle sort field |
-| `S` | Toggle sort direction |
+|-----|--------|
+| `s` | Cycle sort field (label/status/type/domain/pid) |
+| `S` | Toggle sort direction (asc/desc) |
 
-#### Service Actions
-
+### Service Actions
 | Key | Action |
-| --- | ------ |
-| `Enter` | Start service (if stopped) |
+|-----|--------|
+| `↵` Enter | Start service (if stopped) |
 | `x` | Stop service |
 | `r` | Reload service |
 | `d` | Toggle enable/disable |
 | `u` | Unload service |
 
-#### General
-
+### General
 | Key | Action |
-| --- | ------ |
+|-----|--------|
 | `R` | Refresh service list |
+| `Shift+A` | Toggle auto-refresh |
+| `Shift+D` | Toggle dry-run mode |
 | `?` | Toggle help panel |
 | `q` / `Ctrl+C` | Quit |
 
-## Architecture
+## 🏗️ Architecture
 
-```bash
+```
 src/
-├── index.tsx           # Main app entry point
-├── types/
-│   └── index.ts        # TypeScript type definitions
-├── services/
-│   ├── index.ts        # Unified service discovery
-│   ├── launchctl.ts    # launchctl command parsing
-│   ├── systemextensions.ts # systemextensionsctl parsing
-│   └── mock.ts         # Mock data for development
+├── index.tsx                 # App entry point
+├── constants/                # UI constants (colors, dimensions)
+├── store/                    # Zustand state management
+│   ├── useAppStore.ts        # Main store with state + actions
+│   ├── useAppEffects.ts      # Side effects (auto-refresh, reconnect)
+│   └── useDerivedState.ts    # Computed selectors
 ├── hooks/
-│   └── useAppState.tsx # Application state management
-└── components/
-    ├── index.ts        # Component exports
-    ├── Header.tsx      # App header
-    ├── Footer.tsx      # Status bar & shortcuts
-    ├── ServiceList.tsx # Main service list
-    ├── ServiceDetails.tsx # Selected service details
-    ├── FilterBar.tsx   # Filter controls
-    ├── SearchBar.tsx   # Search input
-    ├── ConfirmDialog.tsx # Action confirmation
-    ├── HelpPanel.tsx   # Keyboard shortcuts
-    └── StatusIndicator.tsx # Status icons
+│   └── useKeyboardShortcuts.tsx  # Keyboard event handling
+├── components/               # React/OpenTUI components
+│   ├── ServiceList.tsx       # Virtual scrolling list
+│   ├── ServiceDetails.tsx    # Detail panel with actions
+│   ├── FilterBar.tsx         # Filter controls
+│   └── ...                   # Header, Footer, dialogs
+├── services/                 # macOS service integration
+│   ├── launchctl/            # launchctl parsing & execution
+│   ├── systemextensions.ts   # System extensions
+│   ├── plist.ts              # Plist file parsing
+│   └── mock.ts               # Mock data for development
+└── utils/                    # Utilities (fuzzy search, retry)
 ```
 
-## Technical Details
+## 🔧 Development
 
-### Command Execution
-
-The app uses modern `launchctl` commands:
-
-- `launchctl print <domain>` - List services
-- `launchctl print <domain>/<label>` - Get service details
-- `launchctl kickstart -k <target>` - Start service
-- `launchctl kill SIGTERM <target>` - Stop service
-- `launchctl enable <target>` - Enable service
-- `launchctl disable <target>` - Disable service
-- `launchctl bootout <target>` - Unload service
-
-For system extensions:
-
-- `systemextensionsctl list` - List all extensions
-
-### Security Considerations
-
-1. **System Integrity Protection (SIP)**
-   - Services in `/System/Library/` are protected
-   - The app clearly indicates SIP-protected services
-   - Actions on protected services are blocked
-
-2. **Root Privileges**
-   - System services require `sudo`
-   - The app indicates when root is required
-   - Uses `sudo` prefix when necessary
-
-3. **Immutable Services**
-   - Critical system services cannot be modified
-   - Examples: `com.apple.launchd`, `com.apple.SystemConfiguration`
-
-### Known Limitations
-
-1. System Extensions cannot be started/stopped directly
-   - They must be managed through System Preferences or their parent app
-
-2. Some services may require:
-   - Full Disk Access (for reading certain plist files)
-   - Administrator privileges
-
-3. Actions may fail silently if:
-   - The user cancels `sudo` authentication
-   - The service is in an invalid state
-
-## Development
-
-### Running in Development Mode
+### Commands
 
 ```bash
-bun run dev
+bun install          # Install dependencies
+bun run dev          # Run with hot reload
+bun run typecheck    # TypeScript type checking
+bun run check        # Lint and format (Biome)
+bun test             # Run tests
 ```
 
-This runs with `--watch` for hot reloading.
+### Running on Non-macOS
 
-### Running on Non-macOS Systems
+The app automatically uses mock data on non-macOS systems, allowing development and testing on any platform.
 
-On non-macOS systems, the app uses mock data for demonstration purposes.
+### Tech Stack
 
-### Building
+- **Runtime**: [Bun](https://bun.sh/) - Fast JavaScript runtime
+- **UI**: [OpenTUI](https://github.com/anomalyco/opentui) - React reconciler for terminals
+- **State**: [Zustand](https://zustand-demo.pmnd.rs/) - Lightweight state management
+- **Language**: TypeScript (strict mode)
+- **Linting**: [Biome](https://biomejs.dev/) - Fast formatter and linter
 
-```bash
-bun build src/index.tsx --outdir dist --target bun
-```
+## 🔐 Security
 
-## License
+### System Integrity Protection (SIP)
+- Services in `/System/Library/` are protected by SIP
+- The app clearly indicates protected services with 🔒
+- Actions on SIP-protected services are blocked
 
-MIT
+### Root Privileges
+- System-level services require administrator privileges
+- The app indicates when `sudo` is required
+- Passwords are never stored or logged
 
-## Acknowledgments
+### Immutable Services
+- Critical system services (e.g., `com.apple.launchd`) cannot be modified
+- These are marked with 🛡 and actions are disabled
 
-- [OpenTUI](https://github.com/anomalyco/opentui) - Terminal UI framework
+## ⚠️ Known Limitations
+
+1. **System Extensions** cannot be started/stopped directly - use System Settings or the parent app
+2. **Full Disk Access** may be required to read some plist files
+3. **Actions may fail** if:
+   - User cancels sudo authentication
+   - Service is in an invalid state
+   - SIP prevents modification
+
+## 🗺️ Roadmap
+
+- [ ] Service log viewer (`log show --predicate`)
+- [ ] Mouse support (click to select, scroll wheel)
+- [ ] Service dependency visualization
+- [ ] Batch operations on multiple services
+- [ ] Homebrew formula (`brew install macos-service-manager`)
+- [ ] Standalone binary distribution
+
+See [docs/TODO.md](docs/TODO.md) for the full task list.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Run checks (`bun run typecheck && bun run check && bun test`)
+4. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+### Commit Convention
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat:` - New features
+- `fix:` - Bug fixes
+- `refactor:` - Code restructuring
+- `docs:` - Documentation changes
+- `test:` - Test additions/changes
+
+## 👤 Author
+
+**HexSleeves**
+
+- GitHub: [@HexSleeves](https://github.com/HexSleeves)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [OpenTUI](https://github.com/anomalyco/opentui) - Terminal UI framework for React
+- [Zustand](https://github.com/pmndrs/zustand) - State management
 - [rakhesh.com](https://rakhesh.com/mac/macos-launchctl-commands/) - launchctl reference
 - Apple Developer Documentation
+
+---
+
+<p align="center">
+  Made with ❤️ for the macOS community
+</p>

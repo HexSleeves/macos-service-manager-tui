@@ -1,5 +1,22 @@
 {
 	"name": "macos-service-manager",
+	"version": "0.1.0",
+	"description": "A Terminal UI for managing macOS LaunchDaemons, LaunchAgents, and System Extensions",
+	"author": "HexSleeves",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/HexSleeves/macos-service-manager-tui.git"
+	},
+	"keywords": [
+		"macos",
+		"launchd",
+		"launchctl",
+		"services",
+		"tui",
+		"terminal",
+		"cli"
+	],
 	"module": "src/index.tsx",
 	"type": "module",
 	"private": true,
