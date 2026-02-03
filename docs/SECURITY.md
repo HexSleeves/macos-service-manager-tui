@@ -79,6 +79,7 @@ systemextensionsctl list
 ### UI Behavior
 
 This tool:
+
 - ✅ Lists all installed system extensions
 - ✅ Shows status, team ID, version
 - ❌ Does NOT provide start/stop/unload actions
@@ -107,7 +108,7 @@ async function handleActionError(error: string): ActionResult {
       sipProtected: true,
     };
   }
-  
+
   if (error.includes('Could not find')) {
     return {
       success: false,
@@ -115,7 +116,7 @@ async function handleActionError(error: string): ActionResult {
       error: 'The service may have been unloaded or the plist removed',
     };
   }
-  
+
   return {
     success: false,
     message: 'Action failed',

@@ -101,7 +101,7 @@ const useAppStore = create<AppStoreState & AppStoreActions>((set, get) => ({
   lastActionResult: null,
   offline: OfflineState,
   serviceMetadata: Map<string, Partial<Service>>,
-  
+
   // Actions (methods that update state)
   setServices: (services) => set({ services }),
   selectNext: () => set((state) => ({ selectedIndex: state.selectedIndex + 1 })),
@@ -116,6 +116,7 @@ const refresh = useAppStore((state) => state.refresh);
 ```
 
 **Key files:**
+
 - `src/store/useAppStore.ts` - Main store with state and actions
 - `src/store/useAppEffects.ts` - Side effects (auto-refresh, offline reconnect, metadata prefetch)
 - `src/store/useDerivedState.ts` - Computed selectors (filtered/sorted services, selected service)

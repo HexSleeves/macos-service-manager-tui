@@ -146,7 +146,7 @@ PID    Status    Label
 ### Permission Detection
 
 ```typescript
-const isPermissionError = 
+const isPermissionError =
   result.stderr.includes('Operation not permitted') ||
   result.stderr.includes('Permission denied') ||
   result.exitCode === 1;
@@ -166,14 +166,14 @@ if (isPermissionError && !service.requiresRoot) {
 function getProtectionStatus(label: string, plistPath?: string): ProtectionStatus {
   // System paths are SIP protected
   if (plistPath?.startsWith('/System/')) return 'sip-protected';
-  
+
   // Apple services are system-owned
   if (label.startsWith('com.apple.')) return 'system-owned';
-  
+
   // Known immutable services
   const immutable = ['com.apple.launchd', 'com.apple.kextd'];
   if (immutable.some(s => label.startsWith(s))) return 'immutable';
-  
+
   return 'normal';
 }
 ```

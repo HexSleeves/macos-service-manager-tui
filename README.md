@@ -9,18 +9,20 @@ A powerful **Terminal User Interface (TUI)** for inspecting and managing macOS s
 Built with [OpenTUI](https://github.com/anomalyco/opentui), [React](https://react.dev/), and [Zustand](https://zustand-demo.pmnd.rs/).
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="macOS Service Manager Screenshot" width="800">
+  <img src="docs/image.png" alt="macOS Service Manager Screenshot" width="800">
 </p>
 
 ## ✨ Features
 
 ### 🔍 Service Discovery
+
 - **Comprehensive listing** of all LaunchDaemons, LaunchAgents, and System Extensions
 - **Smart categorization** by type, domain (system/user/gui), and status
 - **Rich metadata** including PID, exit status, plist path, and descriptions
 - **Automatic detection** of Apple/macOS services vs third-party services
 
 ### ⚡ Service Management
+
 - **Start/Stop** services with a single keypress
 - **Enable/Disable** services to control auto-start behavior
 - **Reload** running services to pick up configuration changes
@@ -29,6 +31,7 @@ Built with [OpenTUI](https://github.com/anomalyco/opentui), [React](https://reac
 - **Smart privilege handling** with sudo when required
 
 ### 🎨 Modern UI/UX
+
 - **Vim-style navigation** (`j`/`k`, `g`/`G`)
 - **Fuzzy search** with match highlighting
 - **Collapsible filter bar** with multiple criteria
@@ -44,6 +47,7 @@ Built with [OpenTUI](https://github.com/anomalyco/opentui), [React](https://reac
   - `⚙` System-owned
 
 ### 🛡️ Safety First
+
 - **Confirmation prompts** for destructive actions
 - **Clear protection indicators** for SIP and immutable services
 - **Offline mode** with graceful degradation
@@ -52,6 +56,7 @@ Built with [OpenTUI](https://github.com/anomalyco/opentui), [React](https://reac
 ## 📦 Installation
 
 ### Prerequisites
+
 - [Bun](https://bun.sh/) v1.0 or later
 - macOS 11+ (Big Sur or later)
 
@@ -78,8 +83,9 @@ bunx macos-service-manager  # Coming soon to npm!
 ## ⌨️ Keyboard Shortcuts
 
 ### Navigation
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `↑` / `k` | Move selection up |
 | `↓` / `j` | Move selection down |
 | `g` | Go to first service |
@@ -88,8 +94,9 @@ bunx macos-service-manager  # Coming soon to npm!
 | `Tab` | Switch panel focus |
 
 ### Search & Filter
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `/` | Focus search |
 | `Esc` | Clear search / Cancel |
 | `f` | Toggle filter panel |
@@ -100,14 +107,16 @@ bunx macos-service-manager  # Coming soon to npm!
 | `p` | Toggle protected services visibility |
 
 ### Sorting
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `s` | Cycle sort field (label/status/type/domain/pid) |
 | `S` | Toggle sort direction (asc/desc) |
 
 ### Service Actions
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `↵` Enter | Start service (if stopped) |
 | `x` | Stop service |
 | `r` | Reload service |
@@ -115,8 +124,9 @@ bunx macos-service-manager  # Coming soon to npm!
 | `u` | Unload service |
 
 ### General
+
 | Key | Action |
-|-----|--------|
+| --- | ------ |
 | `R` | Refresh service list |
 | `Shift+A` | Toggle auto-refresh |
 | `Shift+D` | Toggle dry-run mode |
@@ -125,7 +135,7 @@ bunx macos-service-manager  # Coming soon to npm!
 
 ## 🏗️ Architecture
 
-```
+```bash
 src/
 ├── index.tsx                 # App entry point
 ├── constants/                # UI constants (colors, dimensions)
@@ -175,16 +185,19 @@ The app automatically uses mock data on non-macOS systems, allowing development 
 ## 🔐 Security
 
 ### System Integrity Protection (SIP)
+
 - Services in `/System/Library/` are protected by SIP
 - The app clearly indicates protected services with 🔒
 - Actions on SIP-protected services are blocked
 
 ### Root Privileges
+
 - System-level services require administrator privileges
 - The app indicates when `sudo` is required
 - Passwords are never stored or logged
 
 ### Immutable Services
+
 - Critical system services (e.g., `com.apple.launchd`) cannot be modified
 - These are marked with 🛡 and actions are disabled
 
@@ -222,6 +235,7 @@ Contributions are welcome! Please:
 ### Commit Convention
 
 We use [Conventional Commits](https://www.conventionalcommits.org/):
+
 - `feat:` - New features
 - `fix:` - Bug fixes
 - `refactor:` - Code restructuring
