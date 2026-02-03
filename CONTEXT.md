@@ -22,51 +22,60 @@ macos-service-manager/
 ├── src/
 │   ├── index.tsx              # Main entry point, app shell
 │   ├── types/
-│   │   └── index.ts           # TypeScript type definitions
+│   │   └── index.ts           # TypeScript type definitions (162 lines)
 │   ├── constants/
-│   │   └── index.ts           # UI constants (colors, dimensions)
+│   │   └── index.ts           # UI constants (colors, column widths)
 │   ├── store/                 # Zustand state management
 │   │   ├── index.ts           # Store exports
-│   │   ├── useAppStore.ts     # Main Zustand store
+│   │   ├── useAppStore.ts     # Main store with state + actions (354 lines)
 │   │   ├── useAppEffects.ts   # Side effects (auto-refresh, reconnect)
-│   │   └── useDerivedState.ts # Computed/derived state selectors
+│   │   ├── useDerivedState.ts # Computed selectors (filtered services)
+│   │   ├── constants.ts       # Store constants (thresholds, intervals)
+│   │   ├── initialState.ts    # Default state values
+│   │   └── utils.ts           # Helper functions (mergeServices)
 │   ├── services/
-│   │   ├── index.ts           # Unified service discovery API
-│   │   ├── launchctl/         # launchctl module (modular structure)
-│   │   │   ├── index.ts       # Main exports
-│   │   │   ├── exec.ts        # Command execution
-│   │   │   ├── parsers.ts     # Output parsing
-│   │   │   ├── permissions.ts # Permission checks
-│   │   │   └── errors.ts      # Error handling
-│   │   ├── systemextensions.ts # systemextensionsctl parsing
-│   │   ├── plist.ts           # Plist file parsing
-│   │   └── mock.ts            # Mock data for non-macOS development
+│   │   ├── index.ts           # Unified service discovery API (251 lines)
+│   │   ├── launchctl/         # launchctl module (7 files)
+│   │   │   ├── index.ts       # Main exports & actions (417 lines)
+│   │   │   ├── exec.ts        # Command execution with timeout
+│   │   │   ├── parsers.ts     # Output parsing (274 lines)
+│   │   │   ├── permissions.ts # Permission & root checks
+│   │   │   ├── errors.ts      # Error parsing & messages
+│   │   │   ├── types.ts       # Launchctl-specific types
+│   │   │   ├── version.ts     # macOS version detection
+│   │   │   └── validation.ts  # Input validation
+│   │   ├── systemextensions.ts # systemextensionsctl parsing (209 lines)
+│   │   ├── plist.ts           # Plist file parsing (454 lines)
+│   │   └── mock.ts            # Mock data for non-macOS (374 lines)
 │   ├── hooks/
-│   │   ├── useAppState/       # Legacy Context + useReducer (kept for reference)
-│   │   │   ├── index.tsx
-│   │   │   ├── reducer.ts
-│   │   │   ├── effects.ts
-│   │   │   └── utils.ts
-│   │   └── useKeyboardShortcuts.tsx # Keyboard event handling
+│   │   └── useKeyboardShortcuts.tsx # All keyboard handling (275 lines)
 │   ├── utils/
-│   │   ├── fuzzy.ts           # Fuzzy search implementation
-│   │   └── retry.ts           # Retry logic with backoff
+│   │   ├── index.ts           # Utility exports
+│   │   ├── fuzzy.ts           # Fuzzy search with scoring (298 lines)
+│   │   └── retry.ts           # Retry logic with backoff (261 lines)
 │   └── components/
 │       ├── index.ts           # Component exports
 │       ├── Header.tsx         # App title bar with stats
 │       ├── Footer.tsx         # Keyboard shortcuts bar
 │       ├── SearchBar.tsx      # Search input
 │       ├── FilterBar.tsx      # Filter controls (type/domain/status)
-│       ├── ServiceList.tsx    # Virtual scrolling service list
-│       ├── ServiceDetails.tsx # Selected service info + actions
-│       ├── ConfirmDialog.tsx  # Action confirmation modal (centered)
-│       ├── HelpPanel.tsx      # Keyboard shortcuts help (centered)
+│       ├── ServiceList.tsx    # Virtual scrolling list (405 lines)
+│       ├── ServiceDetails.tsx # Detail panel with actions (213 lines)
+│       ├── ConfirmDialog.tsx  # Action confirmation modal
+│       ├── HelpPanel.tsx      # Keyboard shortcuts help (171 lines)
 │       └── StatusIndicator.tsx # Status icons and colors
+├── docs/
+│   ├── TODO.md               # Task tracking
+│   ├── ARCHITECTURE.md       # Technical deep-dive
+│   └── SECURITY.md           # Security considerations
 ├── package.json
 ├── tsconfig.json
 ├── biome.json                # Linting/formatting config
+├── LICENSE                   # MIT License
 └── README.md
 ```
+
+**Total codebase**: ~6,500 lines of TypeScript/TSX
 
 ## Key Concepts
 

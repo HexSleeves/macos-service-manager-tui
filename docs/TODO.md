@@ -1,128 +1,138 @@
 # TODO - macOS Service Manager TUI
 
-## Current State (as of 2025-02-02)
+## Current State (as of 2025-02-03)
 
-The application is functional with the following features implemented:
-- Service listing from launchctl and systemextensionsctl
-- Fuzzy search with match highlighting
-- Filtering by type, domain, status, Apple services, protected services
-- Domain filter cycling with `[` key (All/System/User/GUI)
-- Status filter cycling with `]` key (All/Running/Stopped/Disabled/Error)
-- Sorting by label, status, type, domain, PID
-- Service actions: start, stop, reload, enable, disable, unload
-- Dry-run mode (Shift+D) to preview commands
-- Auto-refresh polling (Shift+A) every 10 seconds
-- Offline mode detection with graceful degradation
-- Plist metadata reading (KeepAlive, RunAtLoad, etc.)
-- Responsive column widths based on terminal size
-- Virtual scrolling for large service lists
+The application is **fully functional** with ~6,500 lines of TypeScript. Core features complete.
 
-### Recent Changes
-- **Migrated to Zustand** for state management (from Context + useReducer)
-  - `src/store/useAppStore.ts` - Main store with state and actions
-  - `src/store/useAppEffects.ts` - Side effects (auto-refresh, reconnect, metadata)
-  - `src/store/useDerivedState.ts` - Computed selectors
-- Extracted keyboard handling to `src/hooks/useKeyboardShortcuts.tsx`
-- Added domain and status filter keyboard shortcuts (`[` and `]`)
-- Added constants module (`src/constants/index.ts`) for UI colors/dimensions
-- Added comprehensive tests for reducer and utils
+### Implemented Features
+- ✅ Service listing from launchctl and systemextensionsctl
+- ✅ Fuzzy search with match highlighting
+- ✅ Filtering by type, domain, status, Apple services, protected services
+- ✅ Keyboard shortcuts for all filters (`1-4`, `[`, `]`, `a`, `p`)
+- ✅ Sorting by label, status, type, domain, PID
+- ✅ Service actions: start, stop, reload, enable, disable, unload
+- ✅ Dry-run mode (`Shift+D`) to preview commands
+- ✅ Auto-refresh polling (`Shift+A`) every 10 seconds
+- ✅ Offline mode detection with graceful degradation
+- ✅ Plist metadata reading (KeepAlive, RunAtLoad, etc.)
+- ✅ Responsive column widths based on terminal size
+- ✅ Virtual scrolling for large service lists
+- ✅ Zustand state management (clean architecture)
+- ✅ Comprehensive README with badges and documentation
+- ✅ MIT License
 
-### Recent Fixes
-- Fixed ghost rows when toggling filters rapidly (position-based keys for virtual scrolling)
-- Fixed duplicate system extensions (deduplication by bundleId)
-- Refactored launchctl.ts (1260 lines) into 8 focused modules
-- Fixed all lint errors (array index keys, assignment in expressions)
-- Fixed Start action shortcut display (was showing `[s]`, now shows `[↵]`)
+### Architecture Highlights
+- **State**: Zustand store (`src/store/useAppStore.ts` - 354 lines)
+- **Keyboard**: Centralized handler (`src/hooks/useKeyboardShortcuts.tsx` - 275 lines)
+- **Services**: Modular launchctl (`src/services/launchctl/` - 7 files)
+- **Components**: 10 React/OpenTUI components
+- **Tests**: Launchctl parsing, fuzzy search, store utils
 
-## High Priority (Remaining)
+---
 
-| Task | Description | Status |
+## High Priority
+
+| Task | Description | Effort |
 |------|-------------|--------|
-| Test on actual macOS | Verify launchctl parsing works with real output | ⬚ |
-| Implement proper sudo handling | PTY/password handling instead of just prefixing sudo | ⬚ |
+| Add screenshot | `docs/screenshot.png` referenced in README | 5 min |
+| Test on macOS | Verify launchctl parsing with real output | 30 min |
+| Proper sudo handling | PTY/password handling instead of prefixing sudo | 4+ hrs |
 
-## Medium Priority
+## Quick Wins
 
-### UI Improvements
-| Task | Description | Status |
+| Task | Description | Effort |
 |------|-------------|--------|
-| Service log viewer | Show recent logs from `log show --predicate` | ⬚ |
-| Mouse support | Click to select, scroll wheel | ⬚ |
-| Color themes | Light/dark mode, customizable colors | ⬚ |
+| Debounce search | Prevent filtering on every keystroke | 15 min |
+| Update HelpPanel | Add `[` `]` shortcuts to help text | 10 min |
 
-### Features
-| Task | Description | Status |
+## Medium Priority - Features
+
+| Task | Description | Effort |
 |------|-------------|--------|
-| Service dependencies | Show what depends on a service | ⬚ |
-| Batch operations | Select multiple services, perform action on all | ⬚ |
-| History | Track actions performed with timestamps | ⬚ |
-| Favorites/bookmarks | Pin frequently managed services | ⬚ |
+| Service log viewer | Show logs via `log show --predicate` | 2-3 hrs |
+| Favorites/bookmarks | Pin frequently managed services | 2 hrs |
+| Mouse support | Click to select, scroll wheel | 2-3 hrs |
+| Batch operations | Select multiple services, action on all | 3-4 hrs |
+| History | Track actions performed with timestamps | 2 hrs |
+
+## Medium Priority - UI
+
+| Task | Description | Effort |
+|------|-------------|--------|
+| Color themes | Light/dark mode, customizable colors | 2-3 hrs |
+| Service dependencies | Show what depends on a service | 3-4 hrs |
+| Compact mode | Single-line filter bar for small terminals | 1 hr |
 
 ## Low Priority
 
 ### Documentation
-| Task | Description | Status |
+| Task | Description | Effort |
 |------|-------------|--------|
-| Screenshots | Visual documentation in README | ⬚ |
-| Video demo | Asciinema recording of usage | ⬚ |
+| Video demo | Asciinema recording of usage | 30 min |
+| Update ARCHITECTURE.md | Reflect Zustand migration | 1 hr |
 
 ### Testing
-| Task | Description | Status |
+| Task | Description | Effort |
 |------|-------------|--------|
-| Unit tests | More tests for parsing functions | ⬚ |
-| Integration tests | Test full workflows with mock data | ⬚ |
+| Component tests | Test UI components with mock store | 2-3 hrs |
+| E2E tests | Full workflow tests with mock data | 3-4 hrs |
 
-### Build & Distribution
-| Task | Description | Status |
+### Distribution
+| Task | Description | Effort |
 |------|-------------|--------|
-| Standalone binary | Bundle with bun for single-file distribution | ⬚ |
-| Homebrew formula | `brew install macos-service-manager` | ⬚ |
+| Standalone binary | Bundle with bun for single-file distribution | 1 hr |
+| Homebrew formula | `brew install macos-service-manager` | 2 hrs |
+| npm package | `npx macos-service-manager` | 1 hr |
 
 ## Technical Debt
 
-| Task | Description | Status |
-|------|-------------|--------|
-| Split ServiceList.tsx | 451 lines, could be broken into smaller components | ⬚ |
-| Remove legacy useAppState | Keep Zustand only, remove old Context code | ⬚ |
-| Debounce search input | Prevent filtering on every keystroke | ⬚ |
-| Memoize filtered results | Prevent unnecessary recalculations | ⬚ |
+| Task | Description | Lines | Effort |
+|------|-------------|-------|--------|
+| Split ServiceList.tsx | Extract ServiceRow, ListHeader components | 405 | 1 hr |
+| Split plist.ts | Separate parsing from description logic | 454 | 1 hr |
+| Split launchctl/index.ts | Extract action handlers | 417 | 1 hr |
 
 ## Known Issues
 
-| Issue | Description | Status |
-|-------|-------------|--------|
-| Search doesn't clear on filter change | Should optionally reset | ⬚ |
+| Issue | Description | Priority |
+|-------|-------------|----------|
+| No screenshot | README references missing `docs/screenshot.png` | High |
+| HelpPanel outdated | Missing `[` `]` domain/status shortcuts | Medium |
+
+---
 
 ## Completed ✓
 
-- Basic service listing and details panel
-- Keyboard navigation (vim-style j/k)
-- Search filtering with fuzzy matching
-- Type/domain/status filters with keyboard shortcuts (1-4, [, ])
-- Sort options
-- Action buttons with confirmation dialogs
-- Help panel with keyboard shortcuts
-- Status and protection indicators
-- Mock data for non-macOS development
-- **Zustand state management** (migrated from React Context)
-- launchctl and systemextensionsctl parsing
-- Dynamic list height based on terminal size
-- Virtual scrolling for large lists
-- Hide Apple services by default
-- Biome linting and TypeScript strict mode
-- Error parsing with user-friendly messages
-- Command timeout handling (30s)
-- Input validation (prevent command injection)
-- Loading spinners and executing overlay
-- Adaptive help panel for small terminals
-- Collapsible filter bar
-- Plist metadata reading
-- Auto-refresh polling
-- Dry-run mode
-- Offline mode detection
-- Responsive column widths
-- Fuzzy search with scoring
-- System extension deduplication
-- Refactored launchctl module structure
-- Extracted keyboard shortcuts to dedicated hook
-- Centralized UI constants
+### Core Features
+- [x] Service listing and details panel
+- [x] Vim-style keyboard navigation (j/k, g/G)
+- [x] Fuzzy search with match highlighting
+- [x] Type/domain/status filters with shortcuts
+- [x] Sort by multiple fields
+- [x] Service actions with confirmation
+- [x] Help panel with shortcuts
+- [x] Status and protection indicators
+
+### Architecture
+- [x] Zustand state management
+- [x] Centralized keyboard handling
+- [x] Modular launchctl service
+- [x] Virtual scrolling
+- [x] Offline mode detection
+- [x] Auto-refresh polling
+- [x] Dry-run mode
+- [x] Plist metadata reading
+
+### Code Quality
+- [x] TypeScript strict mode
+- [x] Biome linting/formatting
+- [x] Unit tests for parsing
+- [x] Mock data for non-macOS dev
+- [x] Clean process exit on quit
+
+### Documentation
+- [x] Comprehensive README
+- [x] MIT License
+- [x] Contributing guidelines
+- [x] CONTEXT.md for AI agents
+- [x] AGENTS.md for development
