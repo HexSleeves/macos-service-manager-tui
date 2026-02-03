@@ -193,8 +193,23 @@ The app automatically uses mock data on non-macOS systems, allowing development 
 ### Root Privileges
 
 - System-level services require administrator privileges
-- The app indicates when `sudo` is required
+- The app shows native macOS authentication dialog (supports Touch ID!)
+- Credentials are cached for ~5 minutes after authentication
 - Passwords are never stored or logged
+
+### Touch ID for sudo (optional)
+
+To enable Touch ID for privileged actions:
+
+```bash
+# Edit the sudo PAM configuration
+sudo nano /etc/pam.d/sudo
+
+# Add this line at the top (after the first comment):
+auth       sufficient     pam_tid.so
+```
+
+After this, the authentication dialog will offer Touch ID as an option.
 
 ### Immutable Services
 
