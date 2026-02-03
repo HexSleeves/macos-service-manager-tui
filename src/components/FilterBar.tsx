@@ -4,14 +4,10 @@
  */
 
 import { useTerminalDimensions } from "@opentui/react";
-// Import column constants for alignment with ServiceList
-import { COL_BORDER, COL_PADDING, COL_PROTECTION, COL_STATUS } from "../constants";
 import { useAppStore } from "../store/useAppStore";
 
-// Calculate label width to align filter buttons with the Type column in ServiceList
-// List structure: border(1) + paddingLeft(1) + status(2) + protection(2) = 6
-// FilterBar has paddingLeft(2), so label width = 6 - 2 = 4
-const LABEL_WIDTH = COL_BORDER / 2 + COL_PADDING / 2 + COL_STATUS + COL_PROTECTION - 2;
+// Shared layout constants for consistent alignment
+const LABEL_WIDTH = 8;
 const ROW_GAP = 1;
 
 interface FilterRowProps {
@@ -21,11 +17,11 @@ interface FilterRowProps {
 
 function FilterRow({ label, children }: FilterRowProps) {
 	return (
-		<box flexDirection="row" alignItems="center" gap={ROW_GAP}>
+		<box flexDirection="row" alignItems="flex-start" gap={ROW_GAP}>
 			<text fg="#6b7280" width={LABEL_WIDTH}>
 				{label}
 			</text>
-			<box flexDirection="row" gap={1}>
+			<box flexDirection="row" flexWrap="wrap" gap={1}>
 				{children}
 			</box>
 		</box>
@@ -98,7 +94,7 @@ export function FilterBar() {
 			gap={gap}
 		>
 			{/* Type filter */}
-			<FilterRow label="T:">
+			<FilterRow label="Type:">
 				<FilterButton label="All" active={filter.type === "all"} shortcut="1" />
 				<FilterButton label="Daemons" active={filter.type === "LaunchDaemon"} shortcut="2" />
 				<FilterButton label="Agents" active={filter.type === "LaunchAgent"} shortcut="3" />
@@ -106,36 +102,36 @@ export function FilterBar() {
 			</FilterRow>
 
 			{/* Domain filter */}
-			<FilterRow label="D:">
+			<FilterRow label="Domain:">
 				<FilterButton label="All" active={filter.domain === "all"} />
 				<FilterButton label="System" active={filter.domain === "system"} />
 				<FilterButton label="User" active={filter.domain === "user"} />
 				<FilterButton label="GUI" active={filter.domain === "gui"} />
-				<text fg="#6b7280"> - Press [[] to cycle</text>
+				<text fg="#6b7280"> - Press [ to cycle</text>
 			</FilterRow>
 
 			{/* Status filter */}
-			<FilterRow label="S:">
+			<FilterRow label="Status:">
 				<FilterButton label="All" active={filter.status === "all"} />
 				<FilterButton label="Running" active={filter.status === "running"} />
 				<FilterButton label="Stopped" active={filter.status === "stopped"} />
 				<FilterButton label="Disabled" active={filter.status === "disabled"} />
 				<FilterButton label="Error" active={filter.status === "error"} />
-				<text fg="#6b7280"> - Press []] to cycle</text>
+				<text fg="#6b7280"> - Press ] to cycle</text>
 			</FilterRow>
 
 			{/* Toggles */}
-			<FilterRow label="">
-				<TogglePill label="Apple/macOS" active={filter.showAppleServices} shortcut="a" />
+			<FilterRow label="Show:">
+				<TogglePill label="Apple/macOS Services" active={filter.showAppleServices} shortcut="a" />
 				<TogglePill label="Protected" active={filter.showProtected} shortcut="p" />
 			</FilterRow>
 
 			{/* Sort info */}
-			<FilterRow label="">
+			<FilterRow label="Sort:">
 				<text fg="#9ca3af">
-					Sort: {sort.field} ({sort.direction})
+					{sort.field} ({sort.direction})
 				</text>
-				<text fg="#6b7280"> - [s] cycle, [S] reverse</text>
+				<text fg="#6b7280"> - Press [s] to cycle, [S] to toggle direction</text>
 			</FilterRow>
 		</box>
 	);
