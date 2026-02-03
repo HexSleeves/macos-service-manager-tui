@@ -98,19 +98,12 @@ function buildShellCommand(command: string[]): string {
 }
 
 /**
- * Execute command with osascript admin privileges (GUI context)
- * Shows native macOS authentication dialog
- * Properly escape the command for AppleScript
+ * Cache sudo credentials using osascript to prompt for password
+ * This shows the native macOS auth dialog and then caches for regular sudo use
  */
-export async function execWithOsascript(command: string[]): Promise<PrivilegedResult> {
-	// Build the shell command
-	const shellCmd = buildShellCommand(command);
-
-	// Escape for AppleScript
-	const escapedCmd = escapeForAppleScript(shellCmd);
-
-	// Build the AppleScript command
-	const appleScript = `do shell script "${escapedCmd}" with administrator privileges`;
+async function cacheSudoViaOsascript(): Promise<{ success: boolean; cancelled: boolean }> {
+	// Use osascript to run 'sudo -v' which validates/caches credentials
+	const appleScript = `do shell script "sudo -v" with administrator privileges`;
 
 	try {
 		const proc = spawn(["osascript", "-e", appleScript], {
@@ -118,32 +111,55 @@ export async function execWithOsascript(command: string[]): Promise<PrivilegedRe
 			stderr: "pipe",
 		});
 
-		const [stdout, stderr, exitCode] = await Promise.all([
+		const [, stderr, exitCode] = await Promise.all([
 			new Response(proc.stdout).text(),
 			new Response(proc.stderr).text(),
 			proc.exited,
 		]);
 
-		// Check for user cancellation
-		const authCancelled =
+		const cancelled =
 			stderr.includes("User canceled") || stderr.includes("user canceled") || stderr.includes("-128");
 
 		return {
 			success: exitCode === 0,
-			stdout: stdout.trim(),
-			stderr: stderr.trim(),
-			exitCode,
-			authCancelled,
+			cancelled,
 		};
-	} catch (error) {
-		const message = error instanceof Error ? error.message : "Unknown error";
+	} catch {
+		return { success: false, cancelled: false };
+	}
+}
+
+/**
+ * Execute command with osascript admin privileges (GUI context)
+ * First caches sudo credentials via osascript, then uses regular sudo
+ * This way subsequent commands can use cached credentials
+ */
+export async function execWithOsascript(command: string[]): Promise<PrivilegedResult> {
+	// First, cache sudo credentials via osascript auth dialog
+	const cacheResult = await cacheSudoViaOsascript();
+
+	if (cacheResult.cancelled) {
 		return {
 			success: false,
 			stdout: "",
-			stderr: message,
+			stderr: "User cancelled authentication",
 			exitCode: 1,
+			authCancelled: true,
 		};
 	}
+
+	if (!cacheResult.success) {
+		return {
+			success: false,
+			stdout: "",
+			stderr: "Failed to authenticate",
+			exitCode: 1,
+			authFailed: true,
+		};
+	}
+
+	// Now credentials are cached, use regular sudo
+	return await execWithSudoCached(command);
 }
 
 /**
