@@ -46,6 +46,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 			{ key: "r", description: "Reload service" },
 			{ key: "d", description: "Enable/disable" },
 			{ key: "u", description: "Unload service" },
+			{ key: "e", description: "Edit plist file" },
 		],
 	},
 	{

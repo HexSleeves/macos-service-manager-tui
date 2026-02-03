@@ -7,6 +7,7 @@ import { useKeyboard, useRenderer } from "@opentui/react";
 import { useAppStore } from "../store/useAppStore";
 import { useFilteredServices, useSelectedService } from "../store/useDerivedState";
 import type { ServiceAction } from "../types";
+import { openInEditor, plistExists, requiresRootToEdit } from "../utils/editor";
 
 export function useKeyboardShortcuts() {
 	const renderer = useRenderer();
@@ -239,6 +240,40 @@ export function useKeyboardShortcuts() {
 		if (key.name === "tab") {
 			const nextPanel = store.focusedPanel === "list" ? "details" : "list";
 			store.setFocus(nextPanel);
+			return;
+		}
+
+		// Edit plist file (only when a service is selected with a plist path)
+		if (key.name === "e" && selectedService && selectedService.type !== "SystemExtension") {
+			const plistPath = selectedService.plistPath;
+
+			if (!plistPath) {
+				store.setActionResult({
+					success: false,
+					message: "No plist file for this service",
+				});
+				return;
+			}
+
+			if (!plistExists(plistPath)) {
+				store.setActionResult({
+					success: false,
+					message: `Plist file not found: ${plistPath}`,
+				});
+				return;
+			}
+
+			// Suspend TUI and open editor
+			renderer.destroy();
+
+			// Open editor - this is async but we're exiting anyway
+			const useRoot = requiresRootToEdit(plistPath);
+			openInEditor(plistPath, { useRoot }).then(() => {
+				// Exit cleanly after editor closes
+				// User can restart the app to see any changes
+				process.exit(0);
+			});
+
 			return;
 		}
 

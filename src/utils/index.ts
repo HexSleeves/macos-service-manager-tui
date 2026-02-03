@@ -2,6 +2,7 @@
  * Utility functions
  */
 
+export { getPreferredEditor, openInEditor, plistExists, requiresRootToEdit } from "./editor";
 export {
 	type FuzzyMatch,
 	fuzzyMatch,

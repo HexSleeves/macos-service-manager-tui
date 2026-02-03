@@ -197,6 +197,7 @@ export function ServiceDetails() {
 							offline={isOffline}
 						/>
 						<ActionButton label="Unload" shortcut="u" disabled={isProtected} offline={isOffline} warning />
+						{service.plistPath && <ActionButton label="Edit" shortcut="e" disabled={false} />}
 					</box>
 				</box>
 			)}
