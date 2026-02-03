@@ -20,6 +20,8 @@ The application is **fully functional** with ~6,500 lines of TypeScript. Core fe
 - ✅ Zustand state management (clean architecture)
 - ✅ Comprehensive README with badges and documentation
 - ✅ MIT License
+- ✅ Proper sudo/PTY handling (osascript + TUI password dialog)
+- ✅ Search input debouncing (300ms)
 
 ### Architecture Highlights
 - **State**: Zustand store (`src/store/useAppStore.ts` - 354 lines)
@@ -34,9 +36,9 @@ The application is **fully functional** with ~6,500 lines of TypeScript. Core fe
 
 | Task | Description | Effort |
 |------|-------------|--------|
-| Add screenshot | `docs/screenshot.png` referenced in README | 5 min |
+| ~~Add screenshot~~ | ✅ Done - `docs/image.png` | - |
 | Test on macOS | Verify launchctl parsing with real output | 30 min |
-| Proper sudo handling | PTY/password handling instead of prefixing sudo | 4+ hrs |
+| ~~Proper sudo handling~~ | ✅ Done - hybrid osascript + TUI password dialog | - |
 
 ## Quick Wins
 
