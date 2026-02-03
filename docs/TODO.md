@@ -3,6 +3,7 @@
 ## Current State (as of 2025-02-02)
 
 The application is functional with the following features implemented:
+
 - Service listing from launchctl and systemextensionsctl
 - Fuzzy search with match highlighting
 - Filtering by type, domain, status, Apple services, protected services
@@ -18,6 +19,7 @@ The application is functional with the following features implemented:
 - Virtual scrolling for large service lists
 
 ### Recent Changes
+
 - **Migrated to Zustand** for state management (from Context + useReducer)
   - `src/store/useAppStore.ts` - Main store with state and actions
   - `src/store/useAppEffects.ts` - Side effects (auto-refresh, reconnect, metadata)
@@ -28,6 +30,7 @@ The application is functional with the following features implemented:
 - Added comprehensive tests for reducer and utils
 
 ### Recent Fixes
+
 - Fixed ghost rows when toggling filters rapidly (position-based keys for virtual scrolling)
 - Fixed duplicate system extensions (deduplication by bundleId)
 - Refactored launchctl.ts (1260 lines) into 8 focused modules
@@ -44,6 +47,7 @@ The application is functional with the following features implemented:
 ## Medium Priority
 
 ### UI Improvements
+
 | Task | Description | Status |
 |------|-------------|--------|
 | Service log viewer | Show recent logs from `log show --predicate` | ⬚ |
@@ -51,6 +55,7 @@ The application is functional with the following features implemented:
 | Color themes | Light/dark mode, customizable colors | ⬚ |
 
 ### Features
+
 | Task | Description | Status |
 |------|-------------|--------|
 | Service dependencies | Show what depends on a service | ⬚ |
@@ -61,18 +66,21 @@ The application is functional with the following features implemented:
 ## Low Priority
 
 ### Documentation
+
 | Task | Description | Status |
 |------|-------------|--------|
 | Screenshots | Visual documentation in README | ⬚ |
 | Video demo | Asciinema recording of usage | ⬚ |
 
 ### Testing
+
 | Task | Description | Status |
 |------|-------------|--------|
 | Unit tests | More tests for parsing functions | ⬚ |
 | Integration tests | Test full workflows with mock data | ⬚ |
 
 ### Build & Distribution
+
 | Task | Description | Status |
 |------|-------------|--------|
 | Standalone binary | Bundle with bun for single-file distribution | ⬚ |
