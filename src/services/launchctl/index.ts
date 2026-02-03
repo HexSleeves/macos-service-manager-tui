@@ -236,10 +236,11 @@ export async function fetchServiceMetadata(service: Service): Promise<{
 
 	if (plistPath) {
 		const isDaemon = plistPath.includes("LaunchDaemons");
-		const isSystemLevel = plistPath.startsWith("/Library/") || plistPath.startsWith("/System/");
 
 		type = isDaemon ? "LaunchDaemon" : "LaunchAgent";
-		domain = isSystemLevel ? "system" : "user";
+		// LaunchDaemons run in system domain
+		// LaunchAgents ALWAYS run in user/gui domain, even when installed in /Library/
+		domain = isDaemon ? "system" : "gui";
 	}
 
 	const needsRoot = requiresRoot(domain, plistPath);
