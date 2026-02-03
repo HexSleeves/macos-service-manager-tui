@@ -4,9 +4,9 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SEARCH_DEBOUNCE_MS } from "../hooks/useAppState/constants";
 import { filterServicesWithScores, sortServices } from "../services";
 import type { Service, ServiceMatchInfo } from "../types";
+import { SEARCH_DEBOUNCE_MS } from "./constants";
 import { useAppStore } from "./useAppStore";
 
 /**

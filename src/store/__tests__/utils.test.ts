@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import type { Service } from "../../../types";
+import type { Service } from "../../types";
 import { hasServiceChanged, mergeServices } from "../utils";
 
 describe("hasServiceChanged", () => {

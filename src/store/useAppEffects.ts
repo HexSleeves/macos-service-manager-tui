@@ -4,13 +4,13 @@
  */
 
 import { useEffect, useRef } from "react";
+import { fetchServiceMetadata } from "../services";
 import {
 	ACTIVE_AUTO_REFRESH_INTERVAL,
 	IDLE_AUTO_REFRESH_INTERVAL,
 	IDLE_THRESHOLD_MS,
 	OFFLINE_RECONNECT_INTERVAL,
-} from "../hooks/useAppState/constants";
-import { fetchServiceMetadata } from "../services";
+} from "./constants";
 import { useAppStore } from "./useAppStore";
 import { useFilteredServices, useSelectedService } from "./useDerivedState";
 

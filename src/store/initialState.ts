@@ -2,7 +2,7 @@
  * Initial application state
  */
 
-import type { AppState, OfflineState } from "../../types";
+import type { AppState, OfflineState } from "../types";
 import { DEFAULT_AUTO_REFRESH_INTERVAL } from "./constants";
 
 const initialOfflineState: OfflineState = {

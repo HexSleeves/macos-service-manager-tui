@@ -2,7 +2,7 @@
  * Utility functions for state management
  */
 
-import type { Service } from "../../types";
+import type { Service } from "../types";
 
 /**
  * Check if a service has changed (for smart updates)

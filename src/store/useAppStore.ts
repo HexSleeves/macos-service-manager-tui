@@ -4,11 +4,11 @@
  */
 
 import { create } from "zustand";
-import { MAX_METADATA_CACHE_SIZE, OFFLINE_THRESHOLD } from "../hooks/useAppState/constants";
-import { initialState } from "../hooks/useAppState/initialState";
-import { mergeServices } from "../hooks/useAppState/utils";
 import { fetchAllServices, getNextSortField, performServiceAction } from "../services";
 import type { ActionResult, AppState, Service, ServiceAction } from "../types";
+import { MAX_METADATA_CACHE_SIZE, OFFLINE_THRESHOLD } from "./constants";
+import { initialState } from "./initialState";
+import { mergeServices } from "./utils";
 
 /**
  * Store state interface (matches AppState)

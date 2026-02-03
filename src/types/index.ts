@@ -151,47 +151,6 @@ export interface AppState {
 	metadataLoading: Map<string, ServiceMetadataState>;
 }
 
-// App actions
-export type AppAction =
-	| { type: "SET_SERVICES"; payload: Service[] }
-	| { type: "SET_LOADING"; payload: boolean }
-	| { type: "SET_ERROR"; payload: string | null }
-	| { type: "SELECT_INDEX"; payload: number }
-	| { type: "SELECT_NEXT" }
-	| { type: "SELECT_PREV" }
-	| { type: "SET_SEARCH"; payload: string }
-	| { type: "SET_FILTER"; payload: Partial<FilterOptions> }
-	| { type: "SET_SORT"; payload: SortOptions }
-	| { type: "TOGGLE_SORT_DIRECTION" }
-	| { type: "CYCLE_SORT_FIELD" }
-	| { type: "SET_FOCUS"; payload: AppState["focusedPanel"] }
-	| { type: "TOGGLE_HELP" }
-	| { type: "REQUEST_ACTION"; payload: ServiceAction }
-	| { type: "CONFIRM_ACTION" }
-	| { type: "CANCEL_ACTION" }
-	| { type: "SET_ACTION_RESULT"; payload: ActionResult | null }
-	| { type: "REFRESH" }
-	| { type: "SET_EXECUTING"; payload: boolean }
-	| { type: "TOGGLE_FILTERS" }
-	| { type: "TOGGLE_AUTO_REFRESH" }
-	| { type: "SET_AUTO_REFRESH_INTERVAL"; payload: number }
-	| { type: "UPDATE_SERVICES"; payload: Service[] }
-	| { type: "TOGGLE_DRY_RUN" }
-	| { type: "SET_DRY_RUN_COMMAND"; payload: string | null }
-	| { type: "FETCH_SUCCESS"; payload: Service[] }
-	| { type: "FETCH_FAILURE"; payload: string }
-	| { type: "SET_ONLINE" }
-	| { type: "RECONNECT_ATTEMPT" }
-	| {
-			type: "SET_SERVICE_METADATA";
-			payload: { serviceId: string; metadata: Partial<Service> };
-	  }
-	| {
-			type: "SET_METADATA_LOADING";
-			payload: { serviceId: string; loading: boolean; error?: string | null };
-	  }
-	| { type: "CLEAR_METADATA_CACHE" };
-
 // Match metadata for fuzzy search highlighting
 export interface ServiceMatchInfo {
 	/** Fuzzy match score (higher is better) */
@@ -200,22 +159,4 @@ export interface ServiceMatchInfo {
 	matchField: "label" | "displayName" | "description";
 	/** Indices of matched characters in the matched field */
 	matchedIndices: number[];
-}
-
-// Context type
-export interface AppContextType {
-	state: AppState;
-	dispatch: (action: AppAction) => void;
-	filteredServices: Service[];
-	/** Match info for each filtered service (same order as filteredServices) */
-	serviceMatchInfo: Map<string, ServiceMatchInfo>;
-	selectedService: Service | null;
-	/** Get metadata loading state for a service */
-	getMetadataLoadingState: (serviceId: string) => ServiceMetadataState | undefined;
-	executeAction: (
-		action: ServiceAction,
-		service: Service,
-		options?: { dryRun?: boolean },
-	) => Promise<ActionResult>;
-	refresh: () => Promise<void>;
 }
