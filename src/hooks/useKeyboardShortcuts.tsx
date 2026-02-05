@@ -263,15 +263,27 @@ export function useKeyboardShortcuts() {
 				return;
 			}
 
-			// Suspend TUI and open editor
-			renderer.destroy();
-
-			// Open editor - this is async but we're exiting anyway
+			// Suspend TUI, open editor, then resume
 			const useRoot = requiresRootToEdit(plistPath);
-			openInEditor(plistPath, { useRoot }).then(() => {
-				// Exit cleanly after editor closes
-				// User can restart the app to see any changes
-				process.exit(0);
+			renderer.suspend();
+
+			openInEditor(plistPath, { useRoot }).then((result) => {
+				// Resume TUI after editor closes
+				renderer.resume();
+
+				if (result.success) {
+					store.setActionResult({
+						success: true,
+						message: `Finished editing: ${plistPath}`,
+					});
+					// Refresh to pick up any changes
+					store.refresh();
+				} else if (result.error) {
+					store.setActionResult({
+						success: false,
+						message: result.error,
+					});
+				}
 			});
 
 			return;
