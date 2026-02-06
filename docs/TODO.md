@@ -2,15 +2,16 @@
 
 ## Current State (as of 2025-02-03)
 
-The application is **fully functional** with ~6,500 lines of TypeScript. Core features complete.
+The application is **fully functional** with ~7,000 lines of TypeScript. All core features complete.
 
 ### Implemented Features
 - ✅ Service listing from launchctl and systemextensionsctl
-- ✅ Fuzzy search with match highlighting
+- ✅ Fuzzy search with match highlighting and 300ms debounce
 - ✅ Filtering by type, domain, status, Apple services, protected services
 - ✅ Keyboard shortcuts for all filters (`1-4`, `[`, `]`, `a`, `p`)
 - ✅ Sorting by label, status, type, domain, PID
 - ✅ Service actions: start, stop, reload, enable, disable, unload
+- ✅ **Open plist in editor** (`e` key) with TUI suspend/resume
 - ✅ Dry-run mode (`Shift+D`) to preview commands
 - ✅ Auto-refresh polling (`Shift+A`) every 10 seconds
 - ✅ Offline mode detection with graceful degradation
@@ -18,47 +19,39 @@ The application is **fully functional** with ~6,500 lines of TypeScript. Core fe
 - ✅ Responsive column widths based on terminal size
 - ✅ Virtual scrolling for large service lists
 - ✅ Zustand state management (clean architecture)
+- ✅ **Proper sudo/PTY handling** (osascript + TUI password dialog)
+- ✅ Touch ID support for sudo (via pam_tid.so)
 - ✅ Comprehensive README with badges and documentation
 - ✅ MIT License
-- ✅ Proper sudo/PTY handling (osascript + TUI password dialog)
-- ✅ Search input debouncing (300ms)
 
 ### Architecture Highlights
-- **State**: Zustand store (`src/store/useAppStore.ts` - 354 lines)
-- **Keyboard**: Centralized handler (`src/hooks/useKeyboardShortcuts.tsx` - 275 lines)
-- **Services**: Modular launchctl (`src/services/launchctl/` - 7 files)
-- **Components**: 10 React/OpenTUI components
-- **Tests**: Launchctl parsing, fuzzy search, store utils
+- **State**: Zustand store (`src/store/useAppStore.ts`)
+- **Keyboard**: Centralized handler (`src/hooks/useKeyboardShortcuts.tsx`)
+- **Services**: Modular launchctl (`src/services/launchctl/` - 8 files)
+- **Components**: 11 React/OpenTUI components
+- **Sudo**: Hybrid approach - osascript (GUI) / password dialog (SSH)
+- **Editor**: Uses `renderer.suspend()`/`resume()` for seamless editing
 
 ---
 
 ## High Priority
 
-| Task | Description | Effort |
+| Task | Description | Status |
 |------|-------------|--------|
-| ~~Add screenshot~~ | ✅ Done - `docs/image.png` | - |
-| Test on macOS | Verify launchctl parsing with real output | 30 min |
-| ~~Proper sudo handling~~ | ✅ Done - hybrid osascript + TUI password dialog | - |
-
-## Quick Wins
-
-| Task | Description | Effort |
-|------|-------------|--------|
-| Debounce search | Prevent filtering on every keystroke | 15 min |
-| Update HelpPanel | Add `[` `]` shortcuts to help text | 10 min |
+| ~~Add screenshot~~ | `docs/image.png` | ✅ Done |
+| ~~Proper sudo handling~~ | osascript + TUI password dialog | ✅ Done |
+| ~~Open plist in editor~~ | Press `e` with suspend/resume | ✅ Done |
+| Test on macOS | Verify all features work correctly | Ongoing |
 
 ## Medium Priority - Features
 
 | Task | Description | Effort |
 |------|-------------|--------|
-| **Open plist in editor** | Press `e` to edit plist file in $EDITOR | 4-5 hrs |
 | Service log viewer | Show logs via `log show --predicate` | 2-3 hrs |
 | Favorites/bookmarks | Pin frequently managed services | 2 hrs |
 | Mouse support | Click to select, scroll wheel | 2-3 hrs |
 | Batch operations | Select multiple services, action on all | 3-4 hrs |
 | History | Track actions performed with timestamps | 2 hrs |
-
-**Open plist in editor** - See [docs/open-plist-editor.md](open-plist-editor.md) for implementation plan.
 
 ## Medium Priority - UI
 
@@ -66,7 +59,7 @@ The application is **fully functional** with ~6,500 lines of TypeScript. Core fe
 |------|-------------|--------|
 | Color themes | Light/dark mode, customizable colors | 2-3 hrs |
 | Service dependencies | Show what depends on a service | 3-4 hrs |
-| Compact mode | Single-line filter bar for small terminals | 1 hr |
+| Compact filter bar | Single-line filter bar for small terminals | 1 hr |
 
 ## Low Priority
 
@@ -74,7 +67,7 @@ The application is **fully functional** with ~6,500 lines of TypeScript. Core fe
 | Task | Description | Effort |
 |------|-------------|--------|
 | Video demo | Asciinema recording of usage | 30 min |
-| Update ARCHITECTURE.md | Reflect Zustand migration | 1 hr |
+| Update ARCHITECTURE.md | Reflect current state | 1 hr |
 
 ### Testing
 | Task | Description | Effort |
@@ -101,8 +94,7 @@ The application is **fully functional** with ~6,500 lines of TypeScript. Core fe
 
 | Issue | Description | Priority |
 |-------|-------------|----------|
-| No screenshot | README references missing `docs/screenshot.png` | High |
-| HelpPanel outdated | Missing `[` `]` domain/status shortcuts | Medium |
+| HelpPanel rendering | Some terminals may show garbled text | Low |
 
 ---
 
@@ -112,28 +104,41 @@ The application is **fully functional** with ~6,500 lines of TypeScript. Core fe
 - [x] Service listing and details panel
 - [x] Vim-style keyboard navigation (j/k, g/G)
 - [x] Fuzzy search with match highlighting
+- [x] Search input debouncing (300ms)
 - [x] Type/domain/status filters with shortcuts
 - [x] Sort by multiple fields
 - [x] Service actions with confirmation
 - [x] Help panel with shortcuts
 - [x] Status and protection indicators
+- [x] Open plist in $EDITOR (with TUI suspend/resume)
+
+### Privilege Escalation
+- [x] Sudo credential caching detection
+- [x] osascript with admin privileges (GUI context)
+- [x] TUI password dialog (SSH/headless context)
+- [x] Touch ID support documentation
+- [x] Proper sudo caching after osascript auth
 
 ### Architecture
 - [x] Zustand state management
 - [x] Centralized keyboard handling
-- [x] Modular launchctl service
+- [x] Modular launchctl service (8 files)
 - [x] Virtual scrolling
 - [x] Offline mode detection
 - [x] Auto-refresh polling
 - [x] Dry-run mode
 - [x] Plist metadata reading
+- [x] Editor utilities with suspend/resume
 
-### Code Quality
-- [x] TypeScript strict mode
-- [x] Biome linting/formatting
-- [x] Unit tests for parsing
-- [x] Mock data for non-macOS dev
-- [x] Clean process exit on quit
+### Bug Fixes
+- [x] Ghost rows when toggling filters
+- [x] Duplicate system extensions
+- [x] Start action shortcut display (`[s]` → `[↵]`)
+- [x] FilterBar alignment with ServiceList
+- [x] Domain detection for LaunchAgents (gui vs system)
+- [x] Process exit on quit
+- [x] Sudo credential caching after osascript
+- [x] HelpPanel text overlap
 
 ### Documentation
 - [x] Comprehensive README
@@ -141,3 +146,5 @@ The application is **fully functional** with ~6,500 lines of TypeScript. Core fe
 - [x] Contributing guidelines
 - [x] CONTEXT.md for AI agents
 - [x] AGENTS.md for development
+- [x] Touch ID for sudo instructions
+- [x] Open plist editor implementation plan
