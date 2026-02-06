@@ -24,7 +24,6 @@ export function hasServiceChanged(oldService: Service, newService: Service): boo
 export function mergeServices(oldServices: Service[], newServices: Service[]): Service[] | null {
 	// Build a map of new services by id
 	const newServiceMap = new Map(newServices.map((s) => [s.id, s]));
-	const _oldServiceMap = new Map(oldServices.map((s) => [s.id, s]));
 
 	// Check if the service set has changed
 	const oldIds = new Set(oldServices.map((s) => s.id));

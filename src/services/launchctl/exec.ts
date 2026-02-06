@@ -32,19 +32,24 @@ async function execCommandOnce(
 		stderr: "pipe",
 	});
 
+	let timer: ReturnType<typeof setTimeout> | null = null;
 	const timeoutPromise = new Promise<never>((_, reject) => {
-		setTimeout(() => {
+		timer = setTimeout(() => {
 			proc.kill();
 			reject(new Error(`Command timed out after ${timeoutMs}ms`));
 		}, timeoutMs);
 	});
 
-	const [stdout, stderr, exitCode] = await Promise.race([
-		Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]),
-		timeoutPromise,
-	]);
+	try {
+		const [stdout, stderr, exitCode] = await Promise.race([
+			Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]),
+			timeoutPromise,
+		]);
 
-	return { stdout, stderr, exitCode };
+		return { stdout, stderr, exitCode };
+	} finally {
+		if (timer) clearTimeout(timer);
+	}
 }
 
 /**

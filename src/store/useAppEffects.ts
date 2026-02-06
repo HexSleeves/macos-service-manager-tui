@@ -16,9 +16,23 @@ import { useFilteredServices, useSelectedService } from "./useDerivedState";
 
 /**
  * Hook for managing side effects with Zustand store
+ * Uses granular selectors to avoid unnecessary re-renders
  */
 export function useAppEffects() {
-	const store = useAppStore();
+	// Granular selectors — only subscribe to the specific state each effect needs
+	const autoRefreshEnabled = useAppStore((s) => s.autoRefresh.enabled);
+	const isOffline = useAppStore((s) => s.offline.isOffline);
+	const loading = useAppStore((s) => s.loading);
+	const executingAction = useAppStore((s) => s.executingAction);
+	const lastActionResult = useAppStore((s) => s.lastActionResult);
+	const selectedIndex = useAppStore((s) => s.selectedIndex);
+	const searchQuery = useAppStore((s) => s.searchQuery);
+	const filterType = useAppStore((s) => s.filter.type);
+	const filterDomain = useAppStore((s) => s.filter.domain);
+	const filterStatus = useAppStore((s) => s.filter.status);
+	const serviceMetadata = useAppStore((s) => s.serviceMetadata);
+	const metadataLoading = useAppStore((s) => s.metadataLoading);
+
 	const { filteredServices } = useFilteredServices();
 	const selectedService = useSelectedService(filteredServices);
 
@@ -28,31 +42,25 @@ export function useAppEffects() {
 
 	// Auto-refresh effect with adaptive intervals
 	useEffect(() => {
-		// Clear any existing interval
 		if (autoRefreshIntervalRef.current) {
 			clearInterval(autoRefreshIntervalRef.current);
 			autoRefreshIntervalRef.current = null;
 		}
 
-		// Set up new interval if auto-refresh is enabled and we're online
-		if (store.autoRefresh.enabled && !store.offline.isOffline) {
+		if (autoRefreshEnabled && !isOffline) {
 			const setupInterval = () => {
-				// Calculate adaptive interval based on time since last interaction
 				const timeSinceInteraction = Date.now() - lastInteractionRef.current;
 				const adaptiveInterval =
 					timeSinceInteraction > IDLE_THRESHOLD_MS
 						? IDLE_AUTO_REFRESH_INTERVAL
 						: ACTIVE_AUTO_REFRESH_INTERVAL;
 
-				// Clear existing interval
 				if (autoRefreshIntervalRef.current) {
 					clearInterval(autoRefreshIntervalRef.current);
 				}
 
-				// Set up new interval with adaptive timing
 				autoRefreshIntervalRef.current = setInterval(() => {
-					store.silentRefresh();
-					// Recalculate interval after each refresh
+					useAppStore.getState().silentRefresh();
 					setupInterval();
 				}, adaptiveInterval);
 			};
@@ -60,104 +68,84 @@ export function useAppEffects() {
 			setupInterval();
 		}
 
-		// Cleanup on unmount or when auto-refresh settings change
 		return () => {
 			if (autoRefreshIntervalRef.current) {
 				clearInterval(autoRefreshIntervalRef.current);
 				autoRefreshIntervalRef.current = null;
 			}
 		};
-	}, [store.autoRefresh.enabled, store.offline.isOffline, store.silentRefresh]);
+	}, [autoRefreshEnabled, isOffline]);
 
 	// Track user interactions to adjust auto-refresh interval
 	useEffect(() => {
-		// Update last interaction time on user actions
 		if (
-			store.executingAction ||
-			store.lastActionResult ||
-			store.selectedIndex !== 0 ||
-			store.searchQuery ||
-			store.filter.type !== "all" ||
-			store.filter.domain !== "all" ||
-			store.filter.status !== "all"
+			executingAction ||
+			lastActionResult ||
+			selectedIndex !== 0 ||
+			searchQuery ||
+			filterType !== "all" ||
+			filterDomain !== "all" ||
+			filterStatus !== "all"
 		) {
 			lastInteractionRef.current = Date.now();
 		}
-	}, [
-		store.executingAction,
-		store.lastActionResult,
-		store.selectedIndex,
-		store.searchQuery,
-		store.filter.type,
-		store.filter.domain,
-		store.filter.status,
-	]);
+	}, [executingAction, lastActionResult, selectedIndex, searchQuery, filterType, filterDomain, filterStatus]);
 
-	// Offline reconnect effect - periodically try to reconnect when offline
+	// Offline reconnect effect
 	useEffect(() => {
-		// Clear any existing reconnect interval
 		if (offlineReconnectRef.current) {
 			clearInterval(offlineReconnectRef.current);
 			offlineReconnectRef.current = null;
 		}
 
-		// Set up reconnect interval when offline
-		if (store.offline.isOffline) {
+		if (isOffline) {
 			offlineReconnectRef.current = setInterval(() => {
-				store.attemptReconnect();
+				useAppStore.getState().attemptReconnect();
 			}, OFFLINE_RECONNECT_INTERVAL);
 		}
 
-		// Cleanup on unmount or when offline state changes
 		return () => {
 			if (offlineReconnectRef.current) {
 				clearInterval(offlineReconnectRef.current);
 				offlineReconnectRef.current = null;
 			}
 		};
-	}, [store.offline.isOffline, store.attemptReconnect]);
+	}, [isOffline]);
 
 	// Load metadata for selected service
 	useEffect(() => {
 		if (!selectedService) return;
 		const serviceId = selectedService.id;
 
-		// Skip if metadata already loaded
-		if (store.serviceMetadata.has(serviceId)) return;
-		// Skip if already loading
-		const loadingState = store.metadataLoading.get(serviceId);
+		if (serviceMetadata.has(serviceId)) return;
+		const loadingState = metadataLoading.get(serviceId);
 		if (loadingState?.loading) return;
-		// Skip system extensions (they don't have plists)
 		if (selectedService.type === "SystemExtension") return;
 
-		// Start loading
-		store.setMetadataLoading(serviceId, true);
+		// Use getState() to call actions — avoids subscribing to action references
+		const { setMetadataLoading } = useAppStore.getState();
+		setMetadataLoading(serviceId, true);
 
-		// Fetch metadata
 		fetchServiceMetadata(selectedService)
 			.then((metadata) => {
-				store.setServiceMetadata(serviceId, metadata);
-				store.setMetadataLoading(serviceId, false);
+				useAppStore.getState().setServiceMetadata(serviceId, metadata);
+				useAppStore.getState().setMetadataLoading(serviceId, false);
 			})
 			.catch((error) => {
-				store.setMetadataLoading(
-					serviceId,
-					false,
-					error instanceof Error ? error.message : "Failed to load metadata",
-				);
+				useAppStore
+					.getState()
+					.setMetadataLoading(
+						serviceId,
+						false,
+						error instanceof Error ? error.message : "Failed to load metadata",
+					);
 			});
-	}, [
-		selectedService,
-		store.serviceMetadata,
-		store.metadataLoading,
-		store.setServiceMetadata,
-		store.setMetadataLoading,
-	]);
+	}, [selectedService, serviceMetadata, metadataLoading]);
 
 	// Clear metadata cache on refresh
 	useEffect(() => {
-		if (store.loading) {
-			store.clearMetadataCache();
+		if (loading) {
+			useAppStore.getState().clearMetadataCache();
 		}
-	}, [store.loading, store.clearMetadataCache]);
+	}, [loading]);
 }

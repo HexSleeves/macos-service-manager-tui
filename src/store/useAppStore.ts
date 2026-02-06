@@ -12,13 +12,6 @@ import { initialState } from "./initialState";
 import { mergeServices } from "./utils";
 
 /**
- * Store state interface (matches AppState)
- */
-interface AppStoreState extends AppState {
-	// Actions will be added via the store creator
-}
-
-/**
  * Store actions interface
  */
 interface AppStoreActions {
@@ -101,7 +94,7 @@ function cloneMap<K, V>(map: Map<K, V>): Map<K, V> {
 /**
  * Create Zustand store
  */
-export const useAppStore = create<AppStoreState & AppStoreActions>((set, get) => ({
+export const useAppStore = create<AppState & AppStoreActions>((set, get) => ({
 	// Initial state
 	...initialState,
 
@@ -133,7 +126,10 @@ export const useAppStore = create<AppStoreState & AppStoreActions>((set, get) =>
 	// Selection
 	selectIndex: (index) => set({ selectedIndex: Math.max(0, index) }),
 
-	selectNext: () => set((state) => ({ selectedIndex: state.selectedIndex + 1 })),
+	selectNext: () =>
+		set((state) => ({
+			selectedIndex: Math.min(state.selectedIndex + 1, Math.max(0, state.services.length - 1)),
+		})),
 
 	selectPrev: () => set((state) => ({ selectedIndex: Math.max(0, state.selectedIndex - 1) })),
 
@@ -199,6 +195,7 @@ export const useAppStore = create<AppStoreState & AppStoreActions>((set, get) =>
 			const services = await fetchAllServices();
 			get().fetchSuccess(services);
 		} catch (error) {
+			// Track failures for offline detection, but don't set loading state
 			const errorMessage = error instanceof Error ? error.message : "Failed to fetch services";
 			get().fetchFailure(errorMessage);
 		}
@@ -468,9 +465,6 @@ function buildPrivilegedCommand(action: ServiceAction, service: Service): string
 			}
 			return ["launchctl", "bootout", target];
 		case "reload":
-			if (service.plistPath) {
-				return ["launchctl", "kickstart", "-k", target];
-			}
 			return ["launchctl", "kickstart", "-k", target];
 		default:
 			return ["launchctl", "print", target];

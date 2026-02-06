@@ -53,21 +53,6 @@ function isCamelCaseBoundary(str: string, index: number): boolean {
 }
 
 /**
- * Find all occurrences of a character in a string (case-insensitive)
- */
-function _findAllOccurrences(str: string, char: string): number[] {
-	const indices: number[] = [];
-	const lowerStr = str.toLowerCase();
-	const lowerChar = char.toLowerCase();
-	for (let i = 0; i < lowerStr.length; i++) {
-		if (lowerStr[i] === lowerChar) {
-			indices.push(i);
-		}
-	}
-	return indices;
-}
-
-/**
  * Recursive fuzzy match with memoization
  * Returns the best match starting from given positions
  */

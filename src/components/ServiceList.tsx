@@ -74,7 +74,6 @@ function calculateColumnLayout(terminalWidth: number): ColumnLayout {
 }
 
 interface ServiceRowProps {
-	key: string;
 	service: Service;
 	isSelected: boolean;
 	index: number;
@@ -125,26 +124,9 @@ function HighlightedText({
 		segments.push({ text: currentSegment, highlighted: currentHighlighted });
 	}
 
-	// Optimize: merge very small segments (< 2 chars) with adjacent segments to reduce element count
-	// This reduces React element overhead while maintaining visual appearance
-	const optimizedSegments: Array<{ text: string; highlighted: boolean }> = [];
-	for (let i = 0; i < segments.length; i++) {
-		const seg = segments[i];
-		if (!seg) continue;
-		if (seg.text.length < 2 && optimizedSegments.length > 0) {
-			// Merge small segment with previous segment
-			const prev = optimizedSegments[optimizedSegments.length - 1];
-			if (prev) {
-				prev.text += seg.text;
-			}
-		} else {
-			optimizedSegments.push({ text: seg.text, highlighted: seg.highlighted });
-		}
-	}
-
 	return (
 		<text>
-			{optimizedSegments.map((seg, i) =>
+			{segments.map((seg, i) =>
 				seg.highlighted ? (
 					<b key={`hl-${i}-${seg.text.substring(0, 10)}`}>
 						<span fg={highlightColor}>{seg.text}</span>
@@ -159,7 +141,7 @@ function HighlightedText({
 	);
 }
 
-function ServiceRow({ key, service, isSelected, index, layout, matchInfo, hasSearchQuery }: ServiceRowProps) {
+function ServiceRow({ service, isSelected, index, layout, matchInfo, hasSearchQuery }: ServiceRowProps) {
 	const statusColor = getStatusColor(service.status);
 	const statusSymbol = getStatusSymbol(service.status);
 	const protectionSymbol = getProtectionSymbol(service.protection);
@@ -176,7 +158,7 @@ function ServiceRow({ key, service, isSelected, index, layout, matchInfo, hasSea
 	const truncatedLabel = truncateWithEllipsis(service.label, layout.labelWidth);
 
 	return (
-		<box key={key} flexDirection="row" backgroundColor={bgColor} paddingLeft={1} paddingRight={1} height={1}>
+		<box flexDirection="row" backgroundColor={bgColor} paddingLeft={1} paddingRight={1} height={1}>
 			{/* Status indicator */}
 			<box width={COL_STATUS}>
 				<text fg={statusColor}>{statusSymbol}</text>
@@ -395,7 +377,7 @@ export function ServiceList() {
 				<text fg={COLORS.textMuted}>
 					{selectedIndex + 1} / {filteredServices.length}
 				</text>
-				<text fg="#6b7280">
+				<text fg={COLORS.textMuted}>
 					{startIndex > 0 && "▲ "}
 					{endIndex < totalItems && "▼"}
 				</text>

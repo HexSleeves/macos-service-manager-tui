@@ -58,7 +58,7 @@ const PERMANENT_ERROR_PATTERNS = [
 	/permission denied/i,
 	/operation not permitted/i,
 	/system integrity protection/i,
-	/sip/i,
+	/\bSIP\b/,
 	/invalid.*label/i,
 	/no such service/i,
 	/service not found/i,

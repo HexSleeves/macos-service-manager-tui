@@ -73,31 +73,6 @@ export function isGuiContext(): boolean {
 }
 
 /**
- * Escape a string for use inside AppleScript double-quoted string
- * Escapes backslashes and double quotes
- */
-function escapeForAppleScript(str: string): string {
-	return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
-
-/**
- * Build a shell command string from an array of arguments
- * Properly quotes arguments that need it
- */
-function buildShellCommand(command: string[]): string {
-	return command
-		.map((arg) => {
-			// If arg contains special characters, quote it
-			if (/[\s"'\\$`!*?#~<>|;&()[\]{}]/.test(arg)) {
-				// Use single quotes and escape any single quotes within
-				return `'${arg.replace(/'/g, "'\\''")}'"`;
-			}
-			return arg;
-		})
-		.join(" ");
-}
-
-/**
  * Cache sudo credentials using osascript to prompt for password
  * This shows the native macOS auth dialog and then caches for regular sudo use
  */

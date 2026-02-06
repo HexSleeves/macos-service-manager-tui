@@ -3,35 +3,8 @@
  * Uses systemextensionsctl for listing system extensions
  */
 
-import { spawn } from "bun";
 import type { ServiceStatus, SystemExtension } from "../types";
-
-/**
- * Execute a shell command and return stdout/stderr
- */
-async function execCommand(
-	command: string,
-	args: string[],
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-	try {
-		const proc = spawn([command, ...args], {
-			stdout: "pipe",
-			stderr: "pipe",
-		});
-
-		const stdout = await new Response(proc.stdout).text();
-		const stderr = await new Response(proc.stderr).text();
-		const exitCode = await proc.exited;
-
-		return { stdout, stderr, exitCode };
-	} catch (error) {
-		return {
-			stdout: "",
-			stderr: error instanceof Error ? error.message : "Unknown error",
-			exitCode: 1,
-		};
-	}
-}
+import { execCommand } from "./launchctl/exec";
 
 /**
  * Parse systemextensionsctl list output
@@ -155,55 +128,8 @@ export async function listSystemExtensions(): Promise<SystemExtension[]> {
 	const result = await execCommand("systemextensionsctl", ["list"]);
 
 	if (result.exitCode !== 0) {
-		// systemextensionsctl may require elevated privileges
-		// or simply not be available (not macOS)
-		console.error("Failed to list system extensions:", result.stderr);
 		return [];
 	}
 
 	return parseSystemExtensionsList(result.stdout);
-}
-
-/**
- * Uninstall a system extension
- * Note: This is typically done through the app that installed it
- */
-export async function uninstallSystemExtension(
-	_bundleId: string,
-): Promise<{ success: boolean; message: string; error?: string }> {
-	// systemextensionsctl uninstall requires the team ID and bundle ID
-	// Format: systemextensionsctl uninstall TEAM_ID BUNDLE_ID
-
-	// Note: In practice, system extensions should be uninstalled through
-	// their parent application or System Preferences
-	return {
-		success: false,
-		message: "System extensions should be uninstalled through System Preferences or the parent application",
-		error: "Manual uninstallation not recommended",
-	};
-}
-
-/**
- * Reset system extensions (for debugging/development)
- * WARNING: This is a developer tool and affects all extensions
- */
-export async function resetSystemExtensions(): Promise<{
-	success: boolean;
-	message: string;
-	error?: string;
-}> {
-	const result = await execCommand("systemextensionsctl", ["reset"]);
-
-	if (result.exitCode === 0) {
-		return {
-			success: true,
-			message: "System extensions reset requested. A reboot may be required.",
-		};
-	}
-
-	return {
-		success: false,
-		message: "Failed to reset system extensions",
-		error: result.stderr || "Permission denied or command not available",
-	};
 }

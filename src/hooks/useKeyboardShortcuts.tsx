@@ -11,11 +11,13 @@ import { openInEditor, plistExists, requiresRootToEdit } from "../utils/editor";
 
 export function useKeyboardShortcuts() {
 	const renderer = useRenderer();
-	const store = useAppStore();
 	const { filteredServices } = useFilteredServices();
 	const selectedService = useSelectedService(filteredServices);
 
 	useKeyboard((key) => {
+		// Read store state at keypress time (not via subscription)
+		const store = useAppStore.getState();
+
 		// Block input while executing an action
 		if (store.executingAction) {
 			return;
@@ -52,10 +54,12 @@ export function useKeyboardShortcuts() {
 				return;
 			}
 			if (key.name === "return" || key.name === "enter") {
+				// Capture values before confirmAction() clears them
+				const { pendingAction, dryRun } = store;
 				store.confirmAction();
-				if (store.pendingAction && selectedService) {
-					store.executeAction(store.pendingAction, selectedService, {
-						dryRun: store.dryRun,
+				if (pendingAction && selectedService) {
+					store.executeAction(pendingAction, selectedService, {
+						dryRun,
 					});
 				}
 				return;
@@ -267,24 +271,31 @@ export function useKeyboardShortcuts() {
 			const useRoot = requiresRootToEdit(plistPath);
 			renderer.suspend();
 
-			openInEditor(plistPath, { useRoot }).then((result) => {
-				// Resume TUI after editor closes
-				renderer.resume();
+			openInEditor(plistPath, { useRoot })
+				.then((result) => {
+					// Resume TUI after editor closes
+					renderer.resume();
 
-				if (result.success) {
-					store.setActionResult({
-						success: true,
-						message: `Finished editing: ${plistPath}`,
-					});
-					// Refresh to pick up any changes
-					store.refresh();
-				} else if (result.error) {
-					store.setActionResult({
+					if (result.success) {
+						useAppStore.getState().setActionResult({
+							success: true,
+							message: `Finished editing: ${plistPath}`,
+						});
+						useAppStore.getState().refresh();
+					} else if (result.error) {
+						useAppStore.getState().setActionResult({
+							success: false,
+							message: result.error,
+						});
+					}
+				})
+				.catch((error) => {
+					renderer.resume();
+					useAppStore.getState().setActionResult({
 						success: false,
-						message: result.error,
+						message: error instanceof Error ? error.message : "Failed to open editor",
 					});
-				}
-			});
+				});
 
 			return;
 		}

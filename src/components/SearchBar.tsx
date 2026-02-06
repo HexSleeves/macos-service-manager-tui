@@ -4,10 +4,8 @@
  */
 
 import { useEffect, useState } from "react";
+import { SEARCH_DEBOUNCE_MS } from "../store/constants";
 import { useAppStore } from "../store/useAppStore";
-
-/** Debounce delay in milliseconds */
-const DEBOUNCE_MS = 300;
 
 export function SearchBar() {
 	const searchQuery = useAppStore((state) => state.searchQuery);
@@ -31,7 +29,7 @@ export function SearchBar() {
 
 		const timer = setTimeout(() => {
 			setSearch(localValue);
-		}, DEBOUNCE_MS);
+		}, SEARCH_DEBOUNCE_MS);
 
 		return () => clearTimeout(timer);
 	}, [localValue, searchQuery, setSearch]);

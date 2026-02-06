@@ -18,10 +18,12 @@ export function isAppleService(label: string, plistPath?: string): boolean {
  */
 export function getProtectionStatus(label: string, plistPath?: string): ProtectionStatus {
 	if (plistPath?.startsWith("/System/")) return "sip-protected";
-	if (label.startsWith("com.apple.")) return "system-owned";
 
+	// Immutable check must come before the general com.apple.* check
 	const immutableServices = ["com.apple.SystemConfiguration", "com.apple.launchd", "com.apple.kextd"];
 	if (immutableServices.some((s) => label.startsWith(s))) return "immutable";
+
+	if (label.startsWith("com.apple.")) return "system-owned";
 
 	return "normal";
 }

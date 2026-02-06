@@ -2,9 +2,7 @@
  * Constants for state management
  */
 
-// Default auto-refresh interval (10 seconds)
-export const DEFAULT_AUTO_REFRESH_INTERVAL = 10000;
-// Active interval after user interaction (10 seconds)
+// Auto-refresh interval after user interaction (10 seconds)
 export const ACTIVE_AUTO_REFRESH_INTERVAL = 10000;
 // Idle interval when no recent interaction (30 seconds)
 export const IDLE_AUTO_REFRESH_INTERVAL = 30000;

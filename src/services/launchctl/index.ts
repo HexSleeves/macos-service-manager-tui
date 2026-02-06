@@ -256,50 +256,6 @@ export async function fetchServiceMetadata(service: Service): Promise<{
 		domain,
 	};
 }
-
-/**
- * Get detailed info for a specific service
- */
-export async function getServiceInfo(
-	label: string,
-	domain: ServiceDomain,
-	type: "LaunchDaemon" | "LaunchAgent",
-): Promise<Service | null> {
-	const target = domain === "system" ? "system" : `user/${process.getuid?.() || 501}`;
-	const result = await execCommand("launchctl", ["print", `${target}/${label}`]);
-
-	if (result.exitCode !== 0) return null;
-
-	const info = parseLaunchctlPrint(result.stdout);
-	const plistPath = info.path || (await findPlistPath(label));
-	const protection = getProtectionStatus(label, plistPath);
-	const apple = isAppleService(label, plistPath);
-	const needsRoot = requiresRoot(domain, plistPath);
-	const { metadata: plistMetadata, description } = await getPlistMetadata(plistPath);
-
-	const pid = info.pid ? parseInt(info.pid, 10) : undefined;
-	const exitStatus = info.last_exit_status ? parseInt(info.last_exit_status, 10) : undefined;
-	const enabled = info.state !== "disabled";
-
-	return {
-		id: `${domain}-${label}`,
-		label,
-		displayName: label.split(".").pop() || label,
-		type,
-		domain,
-		status: getServiceStatus(pid, exitStatus, enabled),
-		pid,
-		exitStatus,
-		protection,
-		plistPath,
-		description,
-		enabled,
-		isAppleService: apple,
-		requiresRoot: needsRoot,
-		plistMetadata,
-	};
-}
-
 // ============================================================================
 // Service Actions
 // ============================================================================
