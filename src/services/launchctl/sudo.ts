@@ -4,6 +4,9 @@
 
 import { spawn } from "bun";
 
+/** Timeout for privileged commands (60 seconds) */
+const PRIVILEGED_TIMEOUT_MS = 60_000;
+
 /** Result of a privileged command execution */
 export interface PrivilegedResult {
 	success: boolean;
@@ -149,16 +152,15 @@ export async function execWithSudoStdin(command: string[], password: string): Pr
 			stderr: "pipe",
 		});
 
-		// Write password to stdin followed by newline
-		// FileSink has write() and end() methods
 		proc.stdin.write(`${password}\n`);
 		proc.stdin.end();
 
-		const [stdout, stderr, exitCode] = await Promise.all([
-			new Response(proc.stdout).text(),
-			new Response(proc.stderr).text(),
-			proc.exited,
-		]);
+		const result = await withPrivilegedTimeout(
+			Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]),
+			() => proc.kill(),
+		);
+
+		const [stdout, stderr, exitCode] = result;
 
 		// Check for auth failure
 		const authFailed =
@@ -194,11 +196,10 @@ async function execWithSudoCached(command: string[]): Promise<PrivilegedResult> 
 			stderr: "pipe",
 		});
 
-		const [stdout, stderr, exitCode] = await Promise.all([
-			new Response(proc.stdout).text(),
-			new Response(proc.stderr).text(),
-			proc.exited,
-		]);
+		const [stdout, stderr, exitCode] = await withPrivilegedTimeout(
+			Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]),
+			() => proc.kill(),
+		);
 
 		return {
 			success: exitCode === 0,
@@ -214,6 +215,26 @@ async function execWithSudoCached(command: string[]): Promise<PrivilegedResult> 
 			stderr: message,
 			exitCode: 1,
 		};
+	}
+}
+
+/**
+ * Race a promise against a timeout, killing the process on timeout
+ */
+async function withPrivilegedTimeout<T>(promise: Promise<T>, kill: () => void): Promise<T> {
+	let timer: ReturnType<typeof setTimeout> | null = null;
+	try {
+		return await Promise.race([
+			promise,
+			new Promise<never>((_, reject) => {
+				timer = setTimeout(() => {
+					kill();
+					reject(new Error(`Privileged command timed out after ${PRIVILEGED_TIMEOUT_MS}ms`));
+				}, PRIVILEGED_TIMEOUT_MS);
+			}),
+		]);
+	} finally {
+		if (timer) clearTimeout(timer);
 	}
 }
 

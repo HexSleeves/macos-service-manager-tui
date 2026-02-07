@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { COLORS } from "../constants";
 import { SEARCH_DEBOUNCE_MS } from "../store/constants";
 import { useAppStore } from "../store/useAppStore";
 
@@ -48,9 +49,9 @@ export function SearchBar() {
 			paddingLeft={1}
 			paddingRight={1}
 			height={1}
-			backgroundColor={isFocused ? "#1e3a5f" : "#1f2937"}
+			backgroundColor={isFocused ? COLORS.bgHeader : COLORS.bgSecondary}
 		>
-			<text fg="#6b7280">🔍</text>
+			<text fg={COLORS.textMuted}>🔍</text>
 			<input
 				value={localValue}
 				onChange={handleChange}
@@ -58,11 +59,11 @@ export function SearchBar() {
 				focused={isFocused}
 				width={40}
 				backgroundColor="transparent"
-				textColor="#e5e7eb"
-				placeholderColor="#6b7280"
-				cursorColor="#60a5fa"
+				textColor={COLORS.textSecondary}
+				placeholderColor={COLORS.textMuted}
+				cursorColor={COLORS.textAccent}
 			/>
-			{localValue && <text fg="#6b7280">[ESC] clear</text>}
+			{localValue && <text fg={COLORS.textMuted}>[ESC] clear</text>}
 		</box>
 	);
 }

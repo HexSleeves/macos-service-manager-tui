@@ -248,8 +248,8 @@ describe("normalizePrintKey", () => {
 
 describe("getMacOSVersion", () => {
 	// This test is mostly for coverage - actual version detection happens at runtime
-	it("returns a MacOSVersion object", () => {
-		const version = getMacOSVersion();
+	it("returns a MacOSVersion object", async () => {
+		const version = await getMacOSVersion();
 		expect(version).toBeDefined();
 		expect(typeof version.major).toBe("number");
 		expect(typeof version.minor).toBe("number");

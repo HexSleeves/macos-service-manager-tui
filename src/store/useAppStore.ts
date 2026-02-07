@@ -85,13 +85,6 @@ interface AppStoreActions {
 }
 
 /**
- * Helper to clone a Map (needed for Zustand to detect changes)
- */
-function cloneMap<K, V>(map: Map<K, V>): Map<K, V> {
-	return new Map(map);
-}
-
-/**
  * Create Zustand store
  */
 export const useAppStore = create<AppState & AppStoreActions>((set, get) => ({
@@ -331,26 +324,19 @@ export const useAppStore = create<AppState & AppStoreActions>((set, get) => ({
 	// Metadata cache
 	setServiceMetadata: (serviceId, metadata) =>
 		set((state) => {
-			const newMetadata = cloneMap(state.serviceMetadata);
-			const existing = newMetadata.get(serviceId);
-
-			// If entry exists, remove it to move to end (LRU - most recently used)
-			if (existing) {
-				newMetadata.delete(serviceId);
-			}
-
-			// Merge with existing metadata and add to end
-			newMetadata.set(serviceId, {
-				...existing,
-				...metadata,
-			});
+			const existing = state.serviceMetadata[serviceId];
+			const newMetadata = {
+				...state.serviceMetadata,
+				[serviceId]: { ...existing, ...metadata },
+			};
 
 			// Evict oldest entries if cache exceeds max size
-			if (newMetadata.size > MAX_METADATA_CACHE_SIZE) {
-				const entriesToRemove = newMetadata.size - MAX_METADATA_CACHE_SIZE;
-				const keysToRemove = Array.from(newMetadata.keys()).slice(0, entriesToRemove);
-				for (const key of keysToRemove) {
-					newMetadata.delete(key);
+			const keys = Object.keys(newMetadata);
+			if (keys.length > MAX_METADATA_CACHE_SIZE) {
+				const entriesToRemove = keys.length - MAX_METADATA_CACHE_SIZE;
+				for (let i = 0; i < entriesToRemove; i++) {
+					const key = keys[i];
+					if (key) delete newMetadata[key];
 				}
 			}
 
@@ -358,19 +344,17 @@ export const useAppStore = create<AppState & AppStoreActions>((set, get) => ({
 		}),
 
 	setMetadataLoading: (serviceId, loading, error = null) =>
-		set((state) => {
-			const newLoading = cloneMap(state.metadataLoading);
-			newLoading.set(serviceId, {
-				loading,
-				error,
-			});
-			return { metadataLoading: newLoading };
-		}),
+		set((state) => ({
+			metadataLoading: {
+				...state.metadataLoading,
+				[serviceId]: { loading, error },
+			},
+		})),
 
 	clearMetadataCache: () =>
 		set({
-			serviceMetadata: new Map(),
-			metadataLoading: new Map(),
+			serviceMetadata: {},
+			metadataLoading: {},
 		}),
 
 	// Password dialog actions

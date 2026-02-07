@@ -70,16 +70,8 @@ export function parseErrorMessage(stderr: string, exitCode: number): ParsedError
 		};
 	}
 
-	if (exitCode === 1) {
-		return {
-			message: stderr.trim() || "Operation failed",
-			requiresRoot: true,
-			sipProtected: false,
-		};
-	}
-
 	return {
-		message: stderr.trim() || `Unknown error (exit code ${exitCode})`,
+		message: stderr.trim() || `Operation failed (exit code ${exitCode})`,
 		requiresRoot: false,
 		sipProtected: false,
 	};

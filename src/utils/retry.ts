@@ -38,7 +38,6 @@ const DEFAULT_OPTIONS: Required<Omit<RetryOptions, "onRetry">> = {
  */
 const TRANSIENT_ERROR_PATTERNS = [
 	/timed? ?out/i,
-	/timeout/i,
 	/EAGAIN/i,
 	/EBUSY/i,
 	/ETIMEDOUT/i,
@@ -199,13 +198,15 @@ export async function withRetryResult<T>(
 	const opts = { ...DEFAULT_OPTIONS, ...options };
 	const { maxRetries, initialDelayMs, exponentialBackoff, maxDelayMs, onRetry } = opts;
 
-	let lastResult: T | null = null;
+	let lastResult: T | undefined;
+	let hasResult = false;
 	const retryErrors: string[] = [];
 
 	for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
 		try {
 			const result = await operation();
 			lastResult = result;
+			hasResult = true;
 
 			// Check if we should retry based on the result
 			if (!shouldRetry(result) || attempt > maxRetries) {
@@ -248,9 +249,9 @@ export async function withRetryResult<T>(
 	}
 
 	// Return the last result if we have one
-	if (lastResult !== null) {
+	if (hasResult) {
 		return {
-			value: lastResult,
+			value: lastResult as T,
 			attempts: maxRetries + 1,
 			retried: true,
 			retryErrors: retryErrors.length > 0 ? retryErrors : undefined,

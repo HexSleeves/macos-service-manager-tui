@@ -3,6 +3,7 @@
  * Used when running in SSH/headless context where osascript won't work
  */
 
+import { COLORS } from "../constants";
 import { useAppStore } from "../store/useAppStore";
 
 export function PasswordDialog() {
@@ -36,64 +37,64 @@ export function PasswordDialog() {
 			<box
 				width={60}
 				border
-				borderColor="#f59e0b"
-				backgroundColor="#1f2937"
+				borderColor={COLORS.textAmber}
+				backgroundColor={COLORS.bgSecondary}
 				padding={2}
 				flexDirection="column"
 				gap={1}
 			>
 				{/* Title */}
-				<text fg="#f59e0b">
+				<text fg={COLORS.textAmber}>
 					<strong>🔐 Administrator Password Required</strong>
 				</text>
 
 				{/* Action description */}
 				<box marginTop={1}>
-					<text fg="#e5e7eb">
-						To <span fg="#22c55e">{actionName}</span> the service:
+					<text fg={COLORS.textSecondary}>
+						To <span fg={COLORS.textSuccess}>{actionName}</span> the service:
 					</text>
 				</box>
 
 				{/* Service name */}
-				<box padding={1} backgroundColor="#111827">
-					<text fg="#9ca3af">{serviceName}</text>
+				<box padding={1} backgroundColor={COLORS.bgPrimary}>
+					<text fg={COLORS.textTertiary}>{serviceName}</text>
 				</box>
 
 				{/* Error message if present */}
 				{passwordDialogError && (
-					<box marginTop={1} padding={1} backgroundColor="#7f1d1d">
-						<text fg="#fca5a5">❌ {passwordDialogError}</text>
+					<box marginTop={1} padding={1} backgroundColor={COLORS.bgWarning}>
+						<text fg={COLORS.textWarningLight}>❌ {passwordDialogError}</text>
 					</box>
 				)}
 
 				{/* Password prompt */}
 				<box marginTop={1}>
-					<text fg="#9ca3af">Enter your password:</text>
+					<text fg={COLORS.textTertiary}>Enter your password:</text>
 				</box>
 
 				{/* Password input field (masked) */}
 				<box
 					border
-					borderColor="#4b5563"
-					backgroundColor="#111827"
+					borderColor={COLORS.borderMuted}
+					backgroundColor={COLORS.bgPrimary}
 					paddingLeft={1}
 					paddingRight={1}
 					height={3}
 					alignItems="center"
 				>
-					<text fg="#e5e7eb">
+					<text fg={COLORS.textSecondary}>
 						{maskedPassword}
-						<span fg="#f59e0b">█</span>
+						<span fg={COLORS.textAmber}>█</span>
 					</text>
 				</box>
 
 				{/* Instructions */}
 				<box flexDirection="row" gap={4} marginTop={2} justifyContent="center">
-					<box backgroundColor="#22c55e" paddingLeft={2} paddingRight={2}>
-						<text fg="#ffffff">[Enter] Submit</text>
+					<box backgroundColor={COLORS.textSuccess} paddingLeft={2} paddingRight={2}>
+						<text fg={COLORS.textPrimary}>[Enter] Submit</text>
 					</box>
-					<box backgroundColor="#374151" paddingLeft={2} paddingRight={2}>
-						<text fg="#ffffff">[ESC] Cancel</text>
+					<box backgroundColor={COLORS.bgTertiary} paddingLeft={2} paddingRight={2}>
+						<text fg={COLORS.textPrimary}>[ESC] Cancel</text>
 					</box>
 				</box>
 			</box>

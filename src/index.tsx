@@ -4,7 +4,7 @@
  */
 
 import { createCliRenderer } from "@opentui/core";
-import { createRoot, useTerminalDimensions } from "@opentui/react";
+import { createRoot } from "@opentui/react";
 import { useEffect } from "react";
 
 import {
@@ -24,7 +24,6 @@ import { useAppStore } from "./store/useAppStore";
 
 // Main App component
 function App() {
-	const _terminalDimensions = useTerminalDimensions();
 	const showFilters = useAppStore((state) => state.showFilters);
 
 	// Initialize effects (auto-refresh, offline reconnect, metadata prefetch)

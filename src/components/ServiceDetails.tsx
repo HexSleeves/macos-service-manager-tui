@@ -3,6 +3,7 @@
  * Shows detailed information about the selected service
  */
 
+import { COLORS } from "../constants";
 import { useAppStore } from "../store/useAppStore";
 import { useFilteredServices, useSelectedService } from "../store/useDerivedState";
 import type { SystemExtension } from "../types";
@@ -14,10 +15,10 @@ function DetailRow({ label, value, color }: { label: string; value?: string | nu
 	return (
 		<box flexDirection="row" paddingLeft={1}>
 			<box width={14}>
-				<text fg="#6b7280">{label}:</text>
+				<text fg={COLORS.textMuted}>{label}:</text>
 			</box>
 			<box flexGrow={1}>
-				<text fg={color || "#e5e7eb"}>{String(value)}</text>
+				<text fg={color || COLORS.textSecondary}>{String(value)}</text>
 			</box>
 		</box>
 	);
@@ -37,8 +38,8 @@ function ActionButton({
 	offline?: boolean;
 }) {
 	const isDisabled = disabled || offline;
-	const bgColor = isDisabled ? "#374151" : warning ? "#7f1d1d" : "#1e40af";
-	const fgColor = isDisabled ? "#6b7280" : "#ffffff";
+	const bgColor = isDisabled ? COLORS.bgTertiary : warning ? COLORS.bgWarning : COLORS.bgAction;
+	const fgColor = isDisabled ? COLORS.textMuted : COLORS.textPrimary;
 
 	return (
 		<box backgroundColor={bgColor} paddingLeft={1} paddingRight={1}>
@@ -59,8 +60,15 @@ export function ServiceDetails() {
 
 	if (!selectedService) {
 		return (
-			<box width={40} border borderColor="#374151" padding={1} justifyContent="center" alignItems="center">
-				<text fg="#6b7280">No service selected</text>
+			<box
+				width={40}
+				border
+				borderColor={COLORS.bgTertiary}
+				padding={1}
+				justifyContent="center"
+				alignItems="center"
+			>
+				<text fg={COLORS.textMuted}>No service selected</text>
 			</box>
 		);
 	}
@@ -72,7 +80,7 @@ export function ServiceDetails() {
 	const isOffline = offline.isOffline;
 
 	// Check if metadata is loading
-	const metadataState = metadataLoading.get(service.id);
+	const metadataState = metadataLoading[service.id];
 	const isLoadingMetadata = metadataState?.loading ?? false;
 	const metadataError = metadataState?.error;
 
@@ -83,20 +91,20 @@ export function ServiceDetails() {
 		<box
 			width={45}
 			border
-			borderColor={focusedPanel === "details" ? "#3b82f6" : "#374151"}
+			borderColor={focusedPanel === "details" ? COLORS.bgFocus : COLORS.bgTertiary}
 			flexDirection="column"
 		>
 			{/* Header */}
-			<box backgroundColor="#1e3a5f" paddingLeft={1} paddingRight={1} height={1}>
-				<text fg="#60a5fa">
-					{focusedPanel === "details" && <span fg="#3b82f6">▶ </span>}
+			<box backgroundColor={COLORS.bgHeader} paddingLeft={1} paddingRight={1} height={1}>
+				<text fg={COLORS.textAccent}>
+					{focusedPanel === "details" && <span fg={COLORS.bgFocus}>▶ </span>}
 					<strong>Service Details</strong>
 				</text>
 			</box>
 
 			{/* Service name */}
 			<box paddingLeft={1} paddingTop={1}>
-				<text fg="#ffffff">
+				<text fg={COLORS.textPrimary}>
 					<strong>{service.displayName}</strong>
 				</text>
 			</box>
@@ -111,30 +119,32 @@ export function ServiceDetails() {
 				<DetailRow label="Label" value={service.label} />
 				<DetailRow label="Type" value={service.type} />
 				<DetailRow label="Domain" value={service.domain} />
-				<DetailRow label="PID" value={service.pid} color="#22c55e" />
+				<DetailRow label="PID" value={service.pid} color={COLORS.textSuccess} />
 				<DetailRow
 					label="Exit Status"
 					value={service.exitStatus}
-					color={service.exitStatus !== 0 ? "#ef4444" : undefined}
+					color={service.exitStatus !== 0 ? COLORS.textError : undefined}
 				/>
 				<DetailRow
 					label="Enabled"
 					value={service.enabled ? "Yes" : "No"}
-					color={service.enabled ? "#22c55e" : "#ef4444"}
+					color={service.enabled ? COLORS.textSuccess : COLORS.textError}
 				/>
 				{isLoadingMetadata && (
 					<box paddingLeft={1}>
-						<text fg="#6b7280">Loading metadata...</text>
+						<text fg={COLORS.textMuted}>Loading metadata...</text>
 					</box>
 				)}
 				{metadataError && (
 					<box paddingLeft={1}>
-						<text fg="#ef4444">Failed to load metadata: {metadataError}</text>
+						<text fg={COLORS.textError}>Failed to load metadata: {metadataError}</text>
 					</box>
 				)}
 				<DetailRow label="Plist Path" value={service.plistPath} />
 				<DetailRow label="Description" value={service.description} />
-				{service.lastError && <DetailRow label="Last Error" value={service.lastError} color="#ef4444" />}
+				{service.lastError && (
+					<DetailRow label="Last Error" value={service.lastError} color={COLORS.textError} />
+				)}
 
 				{/* System Extension specific */}
 				{sysExt && (
@@ -150,8 +160,8 @@ export function ServiceDetails() {
 
 			{/* Protection notice */}
 			{isProtected && (
-				<box marginTop={1} marginLeft={1} marginRight={1} padding={1} backgroundColor="#7f1d1d">
-					<text fg="#fca5a5">
+				<box marginTop={1} marginLeft={1} marginRight={1} padding={1} backgroundColor={COLORS.bgWarning}>
+					<text fg={COLORS.textWarningLight}>
 						⚠{" "}
 						{service.protection === "sip-protected"
 							? "Protected by System Integrity Protection"
@@ -164,22 +174,22 @@ export function ServiceDetails() {
 
 			{/* Root notice */}
 			{service.requiresRoot && !isProtected && (
-				<box marginTop={1} marginLeft={1} marginRight={1} padding={1} backgroundColor="#78350f">
-					<text fg="#fcd34d">🔑 Requires administrator privileges</text>
+				<box marginTop={1} marginLeft={1} marginRight={1} padding={1} backgroundColor={COLORS.bgWarningLight}>
+					<text fg={COLORS.textWarningYellow}>🔑 Requires administrator privileges</text>
 				</box>
 			)}
 
 			{/* Offline notice */}
 			{isOffline && !isSystemExt && (
-				<box marginTop={1} marginLeft={1} marginRight={1} padding={1} backgroundColor="#374151">
-					<text fg="#9ca3af">⚡ Actions unavailable - offline mode</text>
+				<box marginTop={1} marginLeft={1} marginRight={1} padding={1} backgroundColor={COLORS.bgTertiary}>
+					<text fg={COLORS.textTertiary}>⚡ Actions unavailable - offline mode</text>
 				</box>
 			)}
 
 			{/* Actions */}
 			{!isSystemExt && (
 				<box flexDirection="column" gap={1} paddingTop={1} paddingLeft={1} paddingBottom={1}>
-					<text fg="#9ca3af">Actions:</text>
+					<text fg={COLORS.textTertiary}>Actions:</text>
 					<box flexDirection="row" flexWrap="wrap" gap={1}>
 						{!isRunning && (
 							<ActionButton label="Start" shortcut="Enter" disabled={isProtected} offline={isOffline} />
@@ -204,7 +214,7 @@ export function ServiceDetails() {
 
 			{isSystemExt && (
 				<box padding={1}>
-					<text fg="#6b7280">
+					<text fg={COLORS.textMuted}>
 						System extensions are managed through System Preferences or the parent application.
 					</text>
 				</box>

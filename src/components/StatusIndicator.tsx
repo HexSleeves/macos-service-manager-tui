@@ -3,6 +3,7 @@
  * Visual indicators for service status
  */
 
+import { COLORS } from "../constants";
 import type { ProtectionStatus, ServiceStatus } from "../types";
 
 interface StatusIndicatorProps {
@@ -12,11 +13,11 @@ interface StatusIndicatorProps {
 }
 
 const STATUS_COLORS: Record<ServiceStatus, string> = {
-	running: "#22c55e", // Green
-	stopped: "#6b7280", // Gray
-	disabled: "#eab308", // Yellow
-	error: "#ef4444", // Red
-	unknown: "#8b5cf6", // Purple
+	running: COLORS.statusRunning,
+	stopped: COLORS.statusStopped,
+	disabled: COLORS.statusDisabled,
+	error: COLORS.statusError,
+	unknown: COLORS.statusUnknown,
 };
 
 const STATUS_SYMBOLS: Record<ServiceStatus, string> = {

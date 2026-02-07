@@ -145,10 +145,10 @@ export interface AppState {
 	dryRun: boolean; // When true, show commands without executing them
 	dryRunCommand: string | null; // The command that would be executed in dry-run mode
 	offline: OfflineState; // Offline mode state
-	// Lazy-loaded metadata: map of service ID -> metadata
-	serviceMetadata: Map<string, Partial<Service>>;
-	// Metadata loading states: map of service ID -> loading state
-	metadataLoading: Map<string, ServiceMetadataState>;
+	// Lazy-loaded metadata: service ID -> metadata
+	serviceMetadata: Record<string, Partial<Service>>;
+	// Metadata loading states: service ID -> loading state
+	metadataLoading: Record<string, ServiceMetadataState>;
 	// Password dialog state
 	showPasswordDialog: boolean;
 	passwordDialogError: string | null;

@@ -3,6 +3,7 @@
  * App title and status bar
  */
 
+import { COLORS } from "../constants";
 import { useAppStore } from "../store/useAppStore";
 import { useFilteredServices } from "../store/useDerivedState";
 
@@ -53,48 +54,48 @@ export function Header() {
 			paddingLeft={1}
 			paddingRight={1}
 			height={3}
-			backgroundColor="#1e3a5f"
+			backgroundColor={COLORS.bgHeader}
 		>
 			<box flexDirection="row" gap={2} alignItems="center">
-				<text fg="#60a5fa">
+				<text fg={COLORS.textAccent}>
 					<strong>⚙ macOS Service Manager</strong>
 				</text>
 				{/* Connection status indicator */}
 				{isOffline ? (
-					<box backgroundColor="#7f1d1d" paddingLeft={1} paddingRight={1}>
-						<text fg="#fca5a5">
+					<box backgroundColor={COLORS.bgWarning} paddingLeft={1} paddingRight={1}>
+						<text fg={COLORS.textWarningLight}>
 							<strong>⚡ OFFLINE</strong>
 						</text>
 					</box>
 				) : (
-					<text fg="#22c55e">● Online</text>
+					<text fg={COLORS.textSuccess}>● Online</text>
 				)}
 				{dryRun && (
-					<box backgroundColor="#b45309" paddingLeft={1} paddingRight={1}>
-						<text fg="#ffffff">
+					<box backgroundColor={COLORS.bgAmber} paddingLeft={1} paddingRight={1}>
+						<text fg={COLORS.textPrimary}>
 							<strong>🔍 DRY RUN</strong>
 						</text>
 					</box>
 				)}
-				{loading && <text fg="#fbbf24">Loading...</text>}
+				{loading && <text fg={COLORS.textWarning}>Loading...</text>}
 				{autoRefresh.enabled && !loading && !isOffline && (
-					<text fg="#22c55e">↻ Auto ({autoRefreshSeconds}s)</text>
+					<text fg={COLORS.textSuccess}>↻ Auto ({autoRefreshSeconds}s)</text>
 				)}
 			</box>
 
 			<box flexDirection="row" gap={3}>
 				{/* Show stale data indicator when offline */}
-				{isOffline && <text fg="#fbbf24">⚠ Stale data (last: {lastRefreshText})</text>}
-				<text fg="#9ca3af">
-					Services: <span fg="#e5e7eb">{filteredCount}</span>
-					{filteredCount !== totalCount && <span fg="#6b7280">/{totalCount}</span>}
+				{isOffline && <text fg={COLORS.textWarning}>⚠ Stale data (last: {lastRefreshText})</text>}
+				<text fg={COLORS.textTertiary}>
+					Services: <span fg={COLORS.textSecondary}>{filteredCount}</span>
+					{filteredCount !== totalCount && <span fg={COLORS.textMuted}>/{totalCount}</span>}
 				</text>
-				<text fg="#9ca3af">
-					Running: <span fg="#22c55e">{runningCount}</span>
+				<text fg={COLORS.textTertiary}>
+					Running: <span fg={COLORS.textSuccess}>{runningCount}</span>
 				</text>
 				{searchQuery && (
-					<text fg="#9ca3af">
-						Search: <span fg="#fbbf24">"{searchQuery}"</span>
+					<text fg={COLORS.textTertiary}>
+						Search: <span fg={COLORS.textWarning}>"{searchQuery}"</span>
 					</text>
 				)}
 			</box>

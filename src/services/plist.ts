@@ -1,6 +1,6 @@
 /**
  * Plist file parsing for macOS service metadata
- * Supports both XML and binary plist formats
+ * Uses plutil to convert both XML and binary plists to JSON
  */
 
 import { spawn } from "bun";
@@ -61,7 +61,7 @@ export interface CalendarInterval {
 
 /**
  * Read and parse a plist file
- * Handles both XML and binary formats using plutil for conversion
+ * Uses plutil to convert any plist format (binary or XML) to JSON
  */
 export async function readPlist(path: string): Promise<PlistData | null> {
 	try {
@@ -70,45 +70,8 @@ export async function readPlist(path: string): Promise<PlistData | null> {
 			return null;
 		}
 
-		// Read the file content
-		const content = await file.arrayBuffer();
-		const bytes = new Uint8Array(content);
-
-		// Check if it's binary plist (starts with "bplist")
-		const isBinary =
-			bytes[0] === 0x62 && // 'b'
-			bytes[1] === 0x70 && // 'p'
-			bytes[2] === 0x6c && // 'l'
-			bytes[3] === 0x69 && // 'i'
-			bytes[4] === 0x73 && // 's'
-			bytes[5] === 0x74; // 't'
-
-		let xmlContent: string;
-
-		if (isBinary) {
-			// Convert binary plist to XML using plutil
-			const converted = await convertBinaryPlist(path);
-			if (!converted) {
-				return null;
-			}
-			xmlContent = converted;
-		} else {
-			xmlContent = new TextDecoder().decode(bytes);
-		}
-
-		return parseXmlPlist(xmlContent);
-	} catch (error) {
-		console.error(`Error reading plist ${path}:`, error);
-		return null;
-	}
-}
-
-/**
- * Convert binary plist to XML using plutil
- */
-async function convertBinaryPlist(path: string): Promise<string | null> {
-	try {
-		const proc = spawn(["plutil", "-convert", "xml1", "-o", "-", path], {
+		// plutil handles both binary and XML plists natively
+		const proc = spawn(["plutil", "-convert", "json", "-o", "-", path], {
 			stdout: "pipe",
 			stderr: "pipe",
 		});
@@ -116,172 +79,16 @@ async function convertBinaryPlist(path: string): Promise<string | null> {
 		const stdout = await new Response(proc.stdout).text();
 		const exitCode = await proc.exited;
 
-		if (exitCode !== 0) {
+		if (exitCode !== 0 || !stdout.trim()) {
 			return null;
 		}
 
-		return stdout;
+		const raw = JSON.parse(stdout) as Record<string, unknown>;
+		return mapToPlistData(raw);
 	} catch {
+		// plutil not available (non-macOS) or invalid plist
 		return null;
 	}
-}
-
-/**
- * Parse XML plist content into PlistData
- * Simple XML parser for plist format
- */
-function parseXmlPlist(xml: string): PlistData | null {
-	try {
-		// Extract the root dict content
-		const dictMatch = xml.match(/<dict>([\s\S]*)<\/dict>/);
-		if (!dictMatch) {
-			return null;
-		}
-
-		const dictContent = dictMatch[1];
-		if (!dictContent) {
-			return null;
-		}
-		const rawData = parseDictContent(dictContent);
-
-		// Map to our PlistData structure
-		return mapToPlistData(rawData);
-	} catch (error) {
-		console.error("Error parsing plist XML:", error);
-		return null;
-	}
-}
-
-/**
- * Parse dict content into key-value pairs
- */
-function parseDictContent(content: string): Record<string, unknown> {
-	const result: Record<string, unknown> = {};
-
-	// Match key-value pairs
-	const keyRegex = /<key>([^<]+)<\/key>/g;
-	const keys: { key: string; index: number }[] = [];
-
-	let match: RegExpExecArray | null = keyRegex.exec(content);
-	while (match !== null) {
-		if (match[1]) {
-			keys.push({ key: match[1], index: match.index + match[0].length });
-		}
-		match = keyRegex.exec(content);
-	}
-
-	for (let i = 0; i < keys.length; i++) {
-		const keyInfo = keys[i];
-		if (!keyInfo) continue;
-		const { key, index } = keyInfo;
-		const nextKeyIndex = keys[i + 1]?.index ?? content.length;
-		const valueContent = content.slice(index, nextKeyIndex);
-
-		result[key] = parseValue(valueContent);
-	}
-
-	return result;
-}
-
-/**
- * Parse a plist value (string, integer, boolean, array, dict)
- */
-function parseValue(content: string): unknown {
-	const trimmed = content.trim();
-
-	// String
-	const stringMatch = trimmed.match(/^<string>([^<]*)<\/string>/);
-	if (stringMatch) {
-		return decodeXmlEntities(stringMatch[1] || "");
-	}
-
-	// Integer
-	const intMatch = trimmed.match(/^<integer>([^<]+)<\/integer>/);
-	if (intMatch?.[1]) {
-		return parseInt(intMatch[1], 10);
-	}
-
-	// Real/float
-	const realMatch = trimmed.match(/^<real>([^<]+)<\/real>/);
-	if (realMatch?.[1]) {
-		return parseFloat(realMatch[1]);
-	}
-
-	// Boolean true
-	if (trimmed.match(/^<true\s*\/>/) || trimmed.match(/^<true>/)) {
-		return true;
-	}
-
-	// Boolean false
-	if (trimmed.match(/^<false\s*\/>/) || trimmed.match(/^<false>/)) {
-		return false;
-	}
-
-	// Array
-	const arrayMatch = trimmed.match(/^<array>([\s\S]*?)<\/array>/);
-	if (arrayMatch) {
-		return parseArrayContent(arrayMatch[1] || "");
-	}
-
-	// Empty array
-	if (trimmed.match(/^<array\s*\/>/)) {
-		return [];
-	}
-
-	// Dict
-	const dictMatch = trimmed.match(/^<dict>([\s\S]*?)<\/dict>/);
-	if (dictMatch) {
-		return parseDictContent(dictMatch[1] || "");
-	}
-
-	// Empty dict
-	if (trimmed.match(/^<dict\s*\/>/)) {
-		return {};
-	}
-
-	// Data (base64)
-	const dataMatch = trimmed.match(/^<data>([^<]*)<\/data>/);
-	if (dataMatch) {
-		return `[base64 data: ${(dataMatch[1] || "").length} chars]`;
-	}
-
-	// Date
-	const dateMatch = trimmed.match(/^<date>([^<]+)<\/date>/);
-	if (dateMatch?.[1]) {
-		return dateMatch[1];
-	}
-
-	return null;
-}
-
-/**
- * Parse array content
- */
-function parseArrayContent(content: string): unknown[] {
-	const result: unknown[] = [];
-
-	// Match each element in the array
-	const elementRegex = /<(string|integer|real|true|false|array|dict|data|date)(\s*\/|>[\s\S]*?<\/\1)>/g;
-
-	let match: RegExpExecArray | null = elementRegex.exec(content);
-	while (match !== null) {
-		result.push(parseValue(match[0]));
-		match = elementRegex.exec(content);
-	}
-
-	return result;
-}
-
-/**
- * Decode XML entities
- */
-function decodeXmlEntities(str: string): string {
-	return str
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/&amp;/g, "&")
-		.replace(/&quot;/g, '"')
-		.replace(/&apos;/g, "'");
 }
 
 /**

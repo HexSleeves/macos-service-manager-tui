@@ -3,6 +3,7 @@
  * For confirming destructive actions
  */
 
+import { COLORS } from "../constants";
 import { useAppStore } from "../store/useAppStore";
 import { useFilteredServices, useSelectedService } from "../store/useDerivedState";
 
@@ -29,23 +30,23 @@ export function ConfirmDialog() {
 				<box
 					width={50}
 					border
-					borderColor="#60a5fa"
-					backgroundColor="#1f2937"
+					borderColor={COLORS.textAccent}
+					backgroundColor={COLORS.bgSecondary}
 					padding={2}
 					flexDirection="column"
 					alignItems="center"
 					gap={1}
 				>
-					<text fg="#60a5fa">
+					<text fg={COLORS.textAccent}>
 						<strong>⏳ Executing...</strong>
 					</text>
 					<box marginTop={1}>
-						<text fg="#9ca3af">
+						<text fg={COLORS.textTertiary}>
 							{pendingAction} → {selectedService.label}
 						</text>
 					</box>
 					<box marginTop={1}>
-						<text fg="#6b7280">Please wait...</text>
+						<text fg={COLORS.textMuted}>Please wait...</text>
 					</box>
 				</box>
 			</box>
@@ -62,8 +63,8 @@ export function ConfirmDialog() {
 	const isDryRun = dryRun;
 
 	// Determine border color: orange for dry-run, red for destructive, blue otherwise
-	const borderColor = isDryRun ? "#f97316" : isDestructive ? "#ef4444" : "#3b82f6";
-	const titleColor = isDryRun ? "#f97316" : isDestructive ? "#ef4444" : "#60a5fa";
+	const borderColor = isDryRun ? COLORS.textOrange : isDestructive ? COLORS.textError : COLORS.bgFocus;
+	const titleColor = isDryRun ? COLORS.textOrange : isDestructive ? COLORS.textError : COLORS.textAccent;
 
 	return (
 		<box
@@ -79,7 +80,7 @@ export function ConfirmDialog() {
 				width={70}
 				border
 				borderColor={borderColor}
-				backgroundColor="#1f2937"
+				backgroundColor={COLORS.bgSecondary}
 				padding={2}
 				flexDirection="column"
 				gap={1}
@@ -89,41 +90,45 @@ export function ConfirmDialog() {
 				</text>
 
 				{isDryRun && (
-					<box marginTop={1} padding={1} backgroundColor="#78350f">
-						<text fg="#fbbf24">Dry-run mode: This will show the command without executing it</text>
+					<box marginTop={1} padding={1} backgroundColor={COLORS.bgWarningLight}>
+						<text fg={COLORS.textWarning}>Dry-run mode: This will show the command without executing it</text>
 					</box>
 				)}
 
 				<box marginTop={1}>
-					<text fg="#e5e7eb">
+					<text fg={COLORS.textSecondary}>
 						{isDryRun ? "Preview" : "Are you sure you want to"}{" "}
-						<span fg={isDestructive ? "#ef4444" : "#22c55e"}>{action}</span>
+						<span fg={isDestructive ? COLORS.textError : COLORS.textSuccess}>{action}</span>
 						{isDryRun ? " for this service:" : " this service?"}
 					</text>
 				</box>
 
-				<box marginTop={1} padding={1} backgroundColor="#111827">
-					<text fg="#9ca3af">{service.label}</text>
+				<box marginTop={1} padding={1} backgroundColor={COLORS.bgPrimary}>
+					<text fg={COLORS.textTertiary}>{service.label}</text>
 				</box>
 
 				{service.requiresRoot && (
 					<box marginTop={1}>
-						<text fg="#fbbf24">🔑 This action requires administrator privileges.</text>
+						<text fg={COLORS.textWarning}>🔑 This action requires administrator privileges.</text>
 					</box>
 				)}
 
 				{isDestructive && !isDryRun && (
 					<box marginTop={1}>
-						<text fg="#f87171">This may affect system stability or running applications.</text>
+						<text fg={COLORS.textDanger}>This may affect system stability or running applications.</text>
 					</box>
 				)}
 
 				<box flexDirection="row" gap={4} marginTop={2} justifyContent="center">
-					<box backgroundColor={isDryRun ? "#b45309" : "#22c55e"} paddingLeft={2} paddingRight={2}>
-						<text fg="#ffffff">[Enter] {isDryRun ? "Show Command" : "Confirm"}</text>
+					<box
+						backgroundColor={isDryRun ? COLORS.bgAmber : COLORS.textSuccess}
+						paddingLeft={2}
+						paddingRight={2}
+					>
+						<text fg={COLORS.textPrimary}>[Enter] {isDryRun ? "Show Command" : "Confirm"}</text>
 					</box>
-					<box backgroundColor="#374151" paddingLeft={2} paddingRight={2}>
-						<text fg="#ffffff">[ESC] Cancel</text>
+					<box backgroundColor={COLORS.bgTertiary} paddingLeft={2} paddingRight={2}>
+						<text fg={COLORS.textPrimary}>[ESC] Cancel</text>
 					</box>
 				</box>
 			</box>

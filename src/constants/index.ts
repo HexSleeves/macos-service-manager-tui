@@ -74,4 +74,12 @@ export const COLORS = {
 	statusDisabled: "#eab308",
 	statusError: "#ef4444",
 	statusUnknown: "#8b5cf6",
+
+	// Action/dialog colors
+	bgAction: "#1e40af",
+	textAmber: "#f59e0b",
+	textDanger: "#f87171",
+	textOrange: "#f97316",
+	bgAmber: "#b45309",
+	borderMuted: "#4b5563",
 } as const;

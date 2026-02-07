@@ -3,6 +3,7 @@
  * Keyboard shortcuts and status messages
  */
 
+import { COLORS } from "../constants";
 import { useAppStore } from "../store/useAppStore";
 
 export function Footer() {
@@ -27,14 +28,14 @@ export function Footer() {
 	const showMessage = lastActionResult || loading || executingAction;
 
 	return (
-		<box flexDirection="column" height={3} backgroundColor="#1f2937">
+		<box flexDirection="column" height={3} backgroundColor={COLORS.bgSecondary}>
 			{/* Status message row */}
 			{showMessage && (
 				<box paddingLeft={1} height={1} flexDirection="row" gap={1}>
-					{executingAction && <text fg="#60a5fa">⏳ Executing action...</text>}
-					{loading && !executingAction && <text fg="#60a5fa">↻ Loading services...</text>}
+					{executingAction && <text fg={COLORS.textAccent}>⏳ Executing action...</text>}
+					{loading && !executingAction && <text fg={COLORS.textAccent}>↻ Loading services...</text>}
 					{lastActionResult && !executingAction && !loading && (
-						<text fg={lastActionResult.success ? "#22c55e" : "#ef4444"}>
+						<text fg={lastActionResult.success ? COLORS.textSuccess : COLORS.textError}>
 							{lastActionResult.success ? "✓" : "✗"} {lastActionResult.message}
 							{lastActionResult.error && ` - ${lastActionResult.error}`}
 						</text>
@@ -46,10 +47,13 @@ export function Footer() {
 			<box flexDirection="row" justifyContent="center" gap={2} paddingTop={showMessage ? 0 : 1}>
 				{shortcuts.map(({ key, action, highlight }) => (
 					<box key={key} flexDirection="row" gap={1}>
-						<text fg={highlight ? "#fbbf24" : "#60a5fa"} bg={highlight ? "#78350f" : "#374151"}>
+						<text
+							fg={highlight ? COLORS.textWarning : COLORS.textAccent}
+							bg={highlight ? COLORS.bgWarningLight : COLORS.bgTertiary}
+						>
 							{` ${key} `}
 						</text>
-						<text fg={highlight ? "#fbbf24" : "#9ca3af"}>{action}</text>
+						<text fg={highlight ? COLORS.textWarning : COLORS.textTertiary}>{action}</text>
 					</box>
 				))}
 			</box>

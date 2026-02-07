@@ -89,7 +89,7 @@ export function useSelectedService(filteredServices: Service[]): Service | null 
 		if (!service) return null;
 
 		// Merge with cached metadata
-		const metadata = serviceMetadata.get(service.id);
+		const metadata = serviceMetadata[service.id];
 		if (metadata) {
 			return { ...service, ...metadata };
 		}

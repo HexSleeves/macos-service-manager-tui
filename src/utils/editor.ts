@@ -7,10 +7,10 @@ import { spawn } from "bun";
 
 /**
  * Get the user's preferred editor
- * Priority: $EDITOR → $VISUAL → nano → vim → vi
+ * Priority: $VISUAL → $EDITOR → nano (POSIX convention: VISUAL for full-screen editors)
  */
 export function getPreferredEditor(): string {
-	const editor = process.env.EDITOR || process.env.VISUAL;
+	const editor = process.env.VISUAL || process.env.EDITOR;
 	if (editor) return editor;
 
 	// Default to nano which is available on macOS

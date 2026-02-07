@@ -4,6 +4,7 @@
  */
 
 import { useTerminalDimensions } from "@opentui/react";
+import { COLORS } from "../constants";
 import { useAppStore } from "../store/useAppStore";
 
 interface ShortcutGroup {
@@ -87,24 +88,24 @@ export function HelpPanel() {
 				width={useCompactMode ? 50 : 65}
 				height={maxHeight}
 				border
-				borderColor="#3b82f6"
-				backgroundColor="#111827"
+				borderColor={COLORS.bgFocus}
+				backgroundColor={COLORS.bgPrimary}
 				flexDirection="column"
 				overflow="hidden"
 			>
 				{/* Header */}
 				<box
-					backgroundColor="#1e3a5f"
+					backgroundColor={COLORS.bgHeader}
 					paddingLeft={2}
 					paddingRight={2}
 					height={1}
 					justifyContent="space-between"
 					flexDirection="row"
 				>
-					<text fg="#60a5fa">
+					<text fg={COLORS.textAccent}>
 						<strong>Keyboard Shortcuts</strong>
 					</text>
-					<text fg="#6b7280">[?] close</text>
+					<text fg={COLORS.textMuted}>[?] close</text>
 				</box>
 
 				{/* Shortcuts content - two column layout for compact mode */}
@@ -113,15 +114,15 @@ export function HelpPanel() {
 						{SHORTCUT_GROUPS.map((group) => (
 							<box key={group.title} flexDirection="row" flexWrap="wrap">
 								<box width="100%">
-									<text fg="#fbbf24">
+									<text fg={COLORS.textWarning}>
 										<strong>{group.title}:</strong>
 									</text>
 								</box>
 								{group.shortcuts.map(({ key, description }) => (
 									<box key={`${group.title}-${key}`} width="50%">
 										<text>
-											<span fg="#60a5fa">{key}</span>
-											<span fg="#6b7280"> {description}</span>
+											<span fg={COLORS.textAccent}>{key}</span>
+											<span fg={COLORS.textMuted}> {description}</span>
 										</text>
 									</box>
 								))}
@@ -133,15 +134,15 @@ export function HelpPanel() {
 						{SHORTCUT_GROUPS.map((group) => (
 							<box key={group.title} flexDirection="column">
 								<box height={1}>
-									<text fg="#fbbf24">
+									<text fg={COLORS.textWarning}>
 										<strong>{group.title}</strong>
 									</text>
 								</box>
 								{group.shortcuts.map(({ key, description }) => (
 									<box key={`${group.title}-${key}`} height={1} paddingLeft={2}>
 										<text>
-											<span fg="#60a5fa">{key.padEnd(12)}</span>
-											<span fg="#9ca3af">{description}</span>
+											<span fg={COLORS.textAccent}>{key.padEnd(12)}</span>
+											<span fg={COLORS.textTertiary}>{description}</span>
 										</text>
 									</box>
 								))}
@@ -152,16 +153,16 @@ export function HelpPanel() {
 						{/* Status legend - inline */}
 						<box flexDirection="row" paddingLeft={2} gap={2} marginTop={1}>
 							<text>
-								<span fg="#22c55e">●</span> Run
+								<span fg={COLORS.textSuccess}>●</span> Run
 							</text>
 							<text>
-								<span fg="#6b7280">○</span> Stop
+								<span fg={COLORS.textMuted}>○</span> Stop
 							</text>
 							<text>
-								<span fg="#eab308">◌</span> Off
+								<span fg={COLORS.statusDisabled}>◌</span> Off
 							</text>
 							<text>
-								<span fg="#ef4444">✕</span> Err
+								<span fg={COLORS.textError}>✕</span> Err
 							</text>
 							<text>🔒 SIP</text>
 							<text>⚙ Sys</text>

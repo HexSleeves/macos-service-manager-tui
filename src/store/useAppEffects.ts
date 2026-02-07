@@ -117,8 +117,8 @@ export function useAppEffects() {
 		if (!selectedService) return;
 		const serviceId = selectedService.id;
 
-		if (serviceMetadata.has(serviceId)) return;
-		const loadingState = metadataLoading.get(serviceId);
+		if (serviceId in serviceMetadata) return;
+		const loadingState = metadataLoading[serviceId];
 		if (loadingState?.loading) return;
 		if (selectedService.type === "SystemExtension") return;
 
