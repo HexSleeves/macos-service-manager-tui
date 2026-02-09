@@ -11,9 +11,4 @@ export { PasswordDialog } from "./PasswordDialog";
 export { SearchBar } from "./SearchBar";
 export { ServiceDetails } from "./ServiceDetails";
 export { ServiceList } from "./ServiceList";
-export {
-	getProtectionSymbol,
-	getStatusColor,
-	getStatusSymbol,
-	StatusIndicator,
-} from "./StatusIndicator";
+export { StatusIndicator } from "./StatusIndicator";

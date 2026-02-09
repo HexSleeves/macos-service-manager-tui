@@ -79,13 +79,6 @@ export const LIST_UNUSUAL_LABELS = `PID\tStatus\tLabel
 -\t0\t0com.starts.with.number
 `;
 
-/** Catalina-specific format (slightly different header casing sometimes) */
-export const LIST_CATALINA = `PID\tStatus\tLabel
--\t0\tcom.apple.cloudpaird
-145\t0\tcom.apple.Spotlight
--\t0\tcom.apple.imfoundation.IMRemoteURLConnectionAgent
-`;
-
 /** Format seen in Sequoia with potential new fields (hypothetical) */
 export const LIST_SEQUOIA = `PID\tStatus\tLabel\tPath
 -\t0\tcom.apple.syslogd\t/System/Library/LaunchDaemons/com.apple.syslogd.plist
@@ -261,27 +254,3 @@ export const EXPECTED_LIST_NO_HEADER = [
 	{ pid: 1234, exitStatus: 0, label: "com.example.running" },
 	{ pid: undefined, exitStatus: 78, label: "com.example.error" },
 ];
-
-export const EXPECTED_PRINT_MODERN = {
-	path: "/Library/LaunchDaemons/com.example.myservice.plist",
-	state: "running",
-	program: "/usr/local/bin/myservice",
-	pid: "1234",
-	last_exit_code: "0",
-	spawn_type: "daemon",
-	ondemand: "false",
-	active_count: "1",
-	runs: "5",
-};
-
-export const EXPECTED_PRINT_VENTURA = {
-	path: "/System/Library/LaunchAgents/com.apple.sharingd.plist",
-	state: "running",
-	program: "/usr/libexec/sharingd",
-	pid: "456",
-	last_exit_code: "0",
-	enabled: "true",
-	run_state: "running",
-	priority: "50",
-	processtype: "Background",
-};

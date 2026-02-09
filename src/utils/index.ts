@@ -17,3 +17,4 @@ export {
 	withRetry,
 	withRetryResult,
 } from "./retry";
+export { getProtectionSymbol, getStatusColor, getStatusSymbol } from "./status";
